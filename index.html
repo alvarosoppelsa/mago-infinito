@@ -297,6 +297,7 @@ const CLSMAX=20;
 const clv=id=>(G&&G.cls&&G.cls[id])||0;
 const hdmg=l=>(10+3.5*l)*DMG_K*S.dmg;
 const allyHp=b=>b*foeDmg(G.t)/.6;
+const tsc=()=>Math.pow(Math.max(1,hpScale(G.t)/1.7),.3);
 const f1=x=>x.toFixed(1);
 const CLS={
  mage:[
@@ -320,14 +321,14 @@ const CLS={
   {id:'a_pierce',n:'Flecha perforante',icon:'➳',desc:'Algunas flechas atraviesan a todos los enemigos en línea.',eff:l=>Math.round(100*(.08+.008*l))+'% de las flechas perforan'}
  ],
  necro:[
-  {id:'n_raise',n:'Levantar esqueletos',icon:'💀',desc:'Probabilidad de invocar un esqueleto cuando muere un enemigo.',eff:l=>Math.round(100*Math.min(.45,.06+.012*l))+'% prob. · duran '+f1(15+.3*l)+' s'},
-  {id:'n_vamp',n:'Vampiros',icon:'🦇',desc:'Vampiros vuelan a tu alrededor y atacan a los enemigos.',eff:l=>Math.min(5,1+Math.floor(l/4))+' vampiros permanentes'},
-  {id:'n_mummy',n:'Momias',icon:'🏺',desc:'Invoca momias resistentes que pelean contigo.',eff:l=>(2+Math.floor(l/8))+' momias · duran '+f1(28+.4*l)+' s · cada '+f1(Math.max(16,30-.7*l))+' s'},
-  {id:'n_skeldragon',n:'Dragón esqueleto',icon:'🐉',desc:'Cuando tu dragón muere, vuelve como dragón esqueleto y sigue peleando. Requiere comprar el huevo como todos.',eff:l=>'Hasta '+(1+Math.floor((l-1)/5))+' dragón(es) esqueleto · fuerza '+Math.round(100*(.55+.025*l))+'%'},
-  {id:'n_wall',n:'Muro de huesos',icon:'🦴',desc:'Un muro de huesos te rodea; los enemigos deben romperlo para pasar.',eff:l=>'Dura '+f1(8+.2*l)+' s · cada '+f1(Math.max(18,30-.6*l))+' s'},
-  {id:'n_pest',n:'Pestilencia',icon:'☣️',desc:'Una nube de pestilencia te rodea, daña y ralentiza a los enemigos.',eff:l=>'Radio '+(105+3*l)+' · ralentiza '+Math.round(100*Math.min(.6,.25+.012*l))+'%'},
-  {id:'n_curse',n:'Maldición',icon:'👁️',desc:'Maldice a los enemigos: reciben más daño durante unos segundos.',eff:l=>'+'+Math.round(100*(.25+.02*l))+'% de daño recibido · '+f1(6+.15*l)+' s · cada '+f1(Math.max(10,20-.5*l))+' s'},
-  {id:'n_corpse',n:'Explosión de cadáveres',icon:'💣',desc:'Los enemigos muertos pueden explotar y dañar a los de alrededor.',eff:l=>Math.round(100*(.10+.012*l))+'% prob. · radio '+Math.round(65+1.2*l)}
+  {id:'n_raise',n:'Levantar esqueletos',icon:'💀',desc:'Probabilidad de invocar un esqueleto cuando muere un enemigo.',eff:l=>Math.round(100*Math.min(.6,.15+.02*l))+'% prob. · '+(l>=16?3:l>=8?2:1)+' esqueleto(s) · duran '+f1(16+.4*l)+' s'},
+  {id:'n_vamp',n:'Vampiros',icon:'🦇',desc:'Vampiros vuelan a tu alrededor y atacan a los enemigos.',eff:l=>Math.min(6,2+Math.floor(l/4))+' vampiros permanentes que te curan al morder'},
+  {id:'n_mummy',n:'Momias',icon:'🏺',desc:'Invoca momias resistentes que pelean contigo.',eff:l=>(2+Math.floor(l/6))+' momias resistentes · duran '+f1(35+.6*l)+' s · cada '+f1(Math.max(14,26-.6*l))+' s'},
+  {id:'n_skeldragon',n:'Dragón esqueleto',icon:'🐉',desc:'Cuando tu dragón muere, vuelve como dragón esqueleto y sigue peleando. Requiere comprar el huevo como todos.',eff:l=>'Hasta '+(1+Math.floor((l-1)/4))+' dragón(es) esqueleto · fuerza '+Math.round(100*(.7+.035*l))+'%'},
+  {id:'n_wall',n:'Muro de huesos',icon:'🦴',desc:'Un muro de huesos te rodea; los enemigos deben romperlo para pasar.',eff:l=>'Dura '+f1(10+.4*l)+' s · cada '+f1(Math.max(14,26-.6*l))+' s · daña a quien lo ataca'},
+  {id:'n_pest',n:'Pestilencia',icon:'☣️',desc:'Una nube de pestilencia te rodea, daña y ralentiza a los enemigos.',eff:l=>'Radio '+(120+4*l)+' · ralentiza '+Math.round(100*Math.min(.65,.3+.015*l))+'% y daña'},
+  {id:'n_curse',n:'Maldición',icon:'👁️',desc:'Maldice a los enemigos: reciben más daño durante unos segundos.',eff:l=>'+'+Math.round(100*(.30+.025*l))+'% de daño recibido y -15% de su daño · '+f1(8+.25*l)+' s · cada '+f1(Math.max(9,18-.5*l))+' s'},
+  {id:'n_corpse',n:'Explosión de cadáveres',icon:'💣',desc:'Los enemigos muertos pueden explotar y dañar a los de alrededor.',eff:l=>Math.round(100*Math.min(.4,.12+.01*l))+'% prob. · radio '+Math.round(80+1.8*l)}
  ],
  dwarf:[
   {id:'d_crit',n:'Golpe crítico',icon:'💥',desc:'Tus disparos pueden hacer golpes críticos.',eff:l=>Math.round(100*Math.min(.6,.10+.025*l))+'% prob. · daño x'+f1(2+.12*l)},
@@ -921,10 +922,10 @@ function drawDragonUnit(dg,skel){
   ctx.fillStyle='#000a';ctx.fillRect(dg.x-w/2,by,w,5);ctx.fillStyle=skel?'#cfd3da':(dg.hp/dg.max>.35?'#4ac26a':'#e04050');ctx.fillRect(dg.x-w/2,by,w*Math.max(0,dg.hp/dg.max),5);
   ctx.fillStyle='#fff';ctx.font='bold 10px Segoe UI,sans-serif';ctx.fillText(skel?'Esqueleto':'Nv '+dr.lvl,dg.x,by-6);
 }
-const maxSkelDragons=()=>{const l=clv('n_skeldragon');return l?1+Math.floor((l-1)/5):0};
+const maxSkelDragons=()=>{const l=clv('n_skeldragon');return l?1+Math.floor((l-1)/4):0};
 function convertSkelDragon(dg){
   if(G.hero!=='necro'||G.sdrags.length>=maxSkelDragons())return;
-  const st=dragonStats(),l=clv('n_skeldragon'),k=.55+.025*l;
+  const st=dragonStats(),l=clv('n_skeldragon'),k=.7+.035*l;
   G.sdrags.push({x:dg.x,y:dg.y,hp:st.max*k,max:st.max*k,r:st.r,aggro:st.aggro,atk:.5,flap:0,face:1,a:Math.random()*6.283,inv:false,dmgb:st.base*k,spd:st.spd,flame:G.dr.sk.flame,fcd:4});
   txt(dg.x,dg.y-40,'💀 ¡Dragón esqueleto!','#cfd3da',20);
   G.fx.push({k:'ring',x:dg.x,y:dg.y,r:80,t:.4,c:'#cfd3da'});
@@ -1108,9 +1109,9 @@ function updateSpecials(dt){
     if(G.auto[sp.id]&&G.spCd[sp.id]<=0&&autoOk(sp.id))useSpecial(sp.id);
   }
 }
-const ALLYK={skel:{e:'💀',spd:160,rate:.7},golem:{e:'🗿',spd:110,rate:.9},mummy:{e:'🧟',spd:95,rate:.9},vamp:{e:'🦇',spd:230,rate:.5,fly:true}};
+const ALLYK={skel:{e:'💀',spd:170,rate:.55},golem:{e:'🗿',spd:110,rate:.9},mummy:{e:'🧟',spd:95,rate:.9},vamp:{e:'🦇',spd:240,rate:.4,fly:true}};
 function addAlly(kind,x,y,hp,dmg,life,src){
-  const a={kind,x,y,hp,max:hp,life,cd:0,r:kind==='golem'?16:11,ang:Math.random()*6.283,dmgAbs:dmg,fly:!!ALLYK[kind].fly,src};
+  const a={tsAt:tsc(),kind,x,y,hp,max:hp,life,cd:0,r:kind==='golem'?16:11,ang:Math.random()*6.283,dmgAbs:dmg,fly:!!ALLYK[kind].fly,src};
   G.allies.push(a);return a;
 }
 function updateAllies(dt){
@@ -1131,9 +1132,9 @@ function updateAllies(dt){
     if(near){
       if(a.cd<=0){
         a.cd=k.rate;
-        const base=a.dmgAbs!=null?a.dmgAbs:(18+4*L)*S.dmg*(a.dmgK||1);
+        const base=(a.dmgAbs!=null?a.dmgAbs:(18+4*L)*S.dmg*(a.dmgK||1))*(a.scaleT?tsc()/a.tsAt:1);
         dealDamage(t,base,a.kind==='vamp'?'dark':'phys');
-        if(a.kind==='vamp')G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.002+.0001*clv('n_vamp')));
+        if(a.kind==='vamp')G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.004+.0003*clv('n_vamp')));
       }
     }else{
       const dx=tx-a.x,dy=ty-a.y,d=Math.hypot(dx,dy);
@@ -1157,7 +1158,9 @@ function wallHit(e,dist,dt){
   if(dist>w.R+e.r+4||dist<w.R-18)return false;
   const n=w.segs.length,idx=Math.floor(((Math.atan2(e.y-cy(),e.x-cx())+6.283)%6.283)/6.283*n);
   const sg=w.segs[idx];if(!sg||sg.hp<=0)return false;
-  sg.hp-=e.dmg*dt;return true;
+  sg.hp-=e.dmg*dt;
+  const th=hdmg(clv('n_wall'))*1.2*tsc()*dt;G.dmgBy['Muro de huesos']=(G.dmgBy['Muro de huesos']||0)+Math.min(th,Math.max(0,e.hp));e.hp-=th;if(e.hp<=0)kill(e);
+  return true;
 }
 
 /* ============ ATAQUE BÁSICO Y HABILIDADES DE HÉROE ============ */
@@ -1209,11 +1212,11 @@ function fireBasic(){
 function heroOnKill(e){
   if(G.hero!=='necro'||G.inCorpse)return;
   const r=clv('n_raise');
-  if(r&&Math.random()<Math.min(.45,.06+.012*r))addAlly('skel',e.x,e.y,allyHp(50+10*r),hdmg(r)*.55,15+.3*r,'Esqueletos del nigromante');
+  if(r&&Math.random()<Math.min(.6,.15+.02*r)){let ns=0;for(const q of G.allies)if(q.kind==='skel')ns++;const cap=6+Math.floor(r/3);const n=Math.min(r>=16?3:r>=8?2:1,cap-ns);for(let i=0;i<n;i++)addAlly('skel',e.x+(i-1)*10,e.y,allyHp(50+10*r),hdmg(r)*1.0*tsc(),16+.4*r,'Esqueletos del nigromante')}
   const c=clv('n_corpse');
-  if(c&&Math.random()<.10+.012*c){
+  if(c&&Math.random()<Math.min(.4,.12+.01*c)){
     const ps=SRC;G.inCorpse=true;SRC='Explosión de cadáveres';
-    const R=65+1.2*c,dm=Math.min(e.max*.4,hdmg(c)*2.2),ex=e.x,ey=e.y;
+    const R=80+1.8*c,dm=Math.min(e.max*.35,hdmg(c)*2.5*tsc()),ex=e.x,ey=e.y;
     for(const o of G.enemies){if(o.dead||o===e)continue;if((o.x-ex)**2+(o.y-ey)**2<=(R+o.r)**2)dealDamage(o,dm,'dark')}
     G.fx.push({k:'ring',x:ex,y:ey,r:R,t:.3,c:'#9be07b'});
     G.inCorpse=false;SRC=ps;
@@ -1303,35 +1306,35 @@ function updateHero(dt){
     }
   }else if(h==='necro'){
     if((l=clv('n_vamp'))){
-      const want=Math.min(5,1+Math.floor(l/4));
+      const want=Math.min(6,2+Math.floor(l/4));
       let have=0;for(const a of G.allies)if(a.kind==='vamp')have++;
-      if(have<want){T.vampT=(T.vampT??1.5)-dt;if(T.vampT<=0){T.vampT=5;addAlly('vamp',x0,y0,allyHp(80+12*l),hdmg(l)*.45,1e9,'Vampiros')}}
+      if(have<want){T.vampT=(T.vampT??1.5)-dt;if(T.vampT<=0){T.vampT=3.5;{const v=addAlly('vamp',x0,y0,allyHp(90+15*l),hdmg(l)*1.1*tsc(),1e9,'Vampiros');v.scaleT=true}}}
     }
     if((l=clv('n_mummy'))&&rdy('n_mummy')){
       if(countNear(x0,y0,range)<2)retry('n_mummy');
       else{
-        const n=2+Math.floor(l/8);
-        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('mummy',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(180+35*l),hdmg(l)*.7,28+.4*l,'Momias')}
+        const n=2+Math.floor(l/6);
+        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('mummy',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(200+38*l),hdmg(l)*1.0*tsc(),30+.5*l,'Momias')}
         G.fx.push({k:'ring',x:x0,y:y0,r:60,t:.3,c:'#d8c79a'});
-        done('n_mummy',Math.max(20,32-.6*l));
+        done('n_mummy',Math.max(14,26-.6*l));
       }
     }
     if((l=clv('n_wall'))&&rdy('n_wall')){
       if(countNear(x0,y0,range)<3)retry('n_wall');
       else{
-        const segs=[];for(let i=0;i<14;i++){const hp=allyHp(60+10*l);segs.push({hp,max:hp})}
-        G.walls={R:82,t:8+.2*l,segs};
-        done('n_wall',Math.max(18,30-.6*l));
+        const segs=[];for(let i=0;i<14;i++){const hp=allyHp(80+14*l);segs.push({hp,max:hp})}
+        G.walls={R:82,t:10+.4*l,segs};
+        done('n_wall',Math.max(14,26-.6*l));
       }
     }
     if((l=clv('n_pest'))){
       T.pestTk=(T.pestTk??0)-dt;
       if(T.pestTk<=0){
         T.pestTk=.5;SRC='Pestilencia';
-        const R=105+3*l,d=hdmg(l)*.22,sl=Math.min(.6,.25+.012*l);
+        const R=120+4*l,d=hdmg(l)*.4*tsc(),sl=Math.min(.65,.3+.015*l);
         for(const e of G.enemies){
           if(e.dead||Math.hypot(e.x-x0,e.y-y0)>R+e.r)continue;
-          if(mult(e,'poison')>0)dealDamage(e,d,'poison');
+          if(mult(e,'dark')>0)dealDamage(e,d*1.3,'dark');
           if(!e.dead)e.slow={a:sl,t:.8};
         }
       }
@@ -1339,9 +1342,9 @@ function updateHero(dt){
     if((l=clv('n_curse'))&&rdy('n_curse')){
       if(countNear(x0,y0,range)<2)retry('n_curse');
       else{
-        for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>range)continue;e.vt=G.t+6+.15*l;e.vm=1.25+.02*l}
+        for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>range)continue;e.vt=G.t+8+.25*l;e.vm=1.3+.025*l}
         G.fx.push({k:'ring',x:x0,y:y0,r:range,t:.35,c:'#a050d0'});
-        done('n_curse',Math.max(10,20-.5*l));
+        done('n_curse',Math.max(9,18-.5*l));
       }
     }
   }else if(h==='dwarf'){
@@ -1511,7 +1514,7 @@ function update(dt){
     }
     else if(ally&&ad<e.r+16&&ad<dist)ally.hp-=e.dmg*dt;
     else if(dist>e.r+20){if(!(e.root>0)){e.x+=dx/dist*sp*dt;e.y+=dy/dist*sp*dt}}
-    else hurt(e.dmg*S.def*dt);
+    else hurt(e.dmg*S.def*dt*(e.vt>G.t?.85:1));
   }
   G.enemies=G.enemies.filter(e=>!e.dead);
   updateAllies(dt);
@@ -1649,7 +1652,7 @@ function drawClassFx(x0,y0){
     ctx.lineWidth=1;
   }
   if(h==='necro'&&clv('n_pest')){
-    const R=105+3*clv('n_pest');
+    const R=120+4*clv('n_pest');
     ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='rgba(120,200,80,'+(.10+.04*Math.sin(G.t*3))+')';ctx.fill();ctx.strokeStyle='#8fd05a66';ctx.stroke();
   }
   if(G.walls){
