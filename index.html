@@ -8,8 +8,8 @@
 :root{--bg:#0b0b14;--p1:#15132b;--p2:#0f0e1d;--line:#2b2850;--acc:#8f7cff;--gold:#ffd24a;--txt:#e8e6f0;--mut:#a9a5c4}
 *{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#3a3566 transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Segoe UI,system-ui,sans-serif;overflow:hidden}
-body{display:grid;grid-template-columns:260px minmax(0,1fr) 280px;grid-template-rows:minmax(0,1fr)}
-#game{grid-column:2;grid-row:1;position:relative;min-width:0;min-height:0}
+body{display:grid;grid-template-columns:260px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+#game{overflow:hidden;grid-column:2;grid-row:1;position:relative;min-width:0;min-height:0}
 canvas{display:block;touch-action:none}
 #tbar{display:none}
 .panel{background:linear-gradient(180deg,var(--p1),var(--p2));padding:12px;overflow-y:auto;min-height:0}
@@ -102,7 +102,7 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 .mode.auto{background:#2c6b3c;border-color:#4ac26a;color:#e6ffe9}
 .ctl{height:48px;min-width:46px;background:linear-gradient(180deg,#201d42,#16142e);border:1px solid #3a3566;border-radius:10px;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:0 8px}
 .ctl:hover{border-color:var(--acc)}
-@media(max-width:1100px){body{grid-template-columns:220px minmax(0,1fr) 250px}.sp{width:56px}.heroes{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1100px){body{grid-template-columns:220px minmax(0,1fr)}.sp{width:56px}.heroes{grid-template-columns:repeat(2,1fr)}}
 @media (pointer:coarse){
   .plus{min-width:38px;height:36px;font-size:14px}
   .srow{padding:7px 6px;gap:8px}
@@ -149,6 +149,32 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   .panel{max-height:68vh}
 }
 @media (pointer:coarse){.plus.buy{min-width:88px;height:42px;font-size:14px}}
+#bottomp{grid-column:1/3;grid-row:2;display:flex;gap:18px;align-items:flex-start;padding:8px 14px 10px;border-top:3px solid #8a6a2a;border-radius:0;background:linear-gradient(180deg,#241d30,#120f1a);box-shadow:0 -6px 18px #000a;max-height:230px;overflow:auto}
+.bsec{min-width:0}
+#invSec{flex:1.25}
+#drSec{flex:1}
+.btitle{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#d9b45a;margin:0 0 6px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:6px}
+.slot{position:relative;height:64px;background:linear-gradient(180deg,#2b2338,#181320);border:2px solid #6b5420;border-radius:8px;color:inherit;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:3px 2px;box-shadow:inset 0 0 8px #000a}
+.slot:hover:not(:disabled):not(.off){border-color:#ffd24a;box-shadow:0 0 10px #ffd24a66,inset 0 0 8px #000a}
+.slot.off{opacity:.5}
+.slot:disabled{cursor:not-allowed}
+.slot .si{font-size:22px;line-height:1.1}
+.slot .sl{font-size:10px;color:#c9c5e4;line-height:1}
+.slot .sc{font-size:11px;font-weight:700;color:#ffd24a;line-height:1}
+#bottomp{max-height:none;overflow:visible;padding:6px 14px 8px}
+#drSec .bar2{height:12px;margin:2px 0}
+#drSec .bar2 b{line-height:12px;font-size:9px}
+#drStatus{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.btitle{margin:0 0 4px}
+.slot{height:60px}
+@media (max-width:900px){
+  #bottomp{display:none;grid-column:auto;grid-row:auto;position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));max-height:68vh;z-index:8;flex-direction:column;border-radius:16px 16px 0 0;overflow:auto}
+  #bottomp.open{display:flex}
+  .slots{grid-template-columns:repeat(4,1fr)}
+  .slot{height:76px}
+  .slot .si{font-size:26px}.slot .sl{font-size:11px}.slot .sc{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -167,15 +193,18 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   <div id="bar"></div>
   <div id="overlay"></div>
 </div>
-<div class="panel" id="shopc">
-  <h2>Tienda</h2><div id="shop"></div>
-  <h2 style="margin-top:14px">🐉 Dragón</h2>
-  <div id="drStatus" class="sub"></div>
-  <div class="bar2"><i id="drHp" style="background:#d63a4a"></i><b id="drHpT"></b></div>
-  <div class="bar2"><i id="drXp" style="background:#4a8cff"></i><b id="drXpT"></b></div>
-  <label class="chk" style="margin:4px 0"><input type="checkbox" id="drAuto"> Reponer huevo automáticamente</label>
-  <div id="drPts" class="sub" style="margin-bottom:6px"></div>
-  <div id="drSk"></div>
+<div class="panel" id="bottomp">
+  <div class="bsec" id="invSec">
+    <div class="btitle"><span>🎒 Inventario · pulsa un objeto para subirlo de nivel</span></div>
+    <div id="shop" class="slots"></div>
+  </div>
+  <div class="bsec" id="drSec">
+    <div class="btitle"><span>🐉 Dragón</span><label class="chk"><input type="checkbox" id="drAuto"> Reponer huevo</label></div>
+    <div id="drStatus" class="sub"></div>
+    <div class="bar2"><i id="drHp" style="background:#d63a4a"></i><b id="drHpT"></b></div>
+    <div class="bar2"><i id="drXp" style="background:#4a8cff"></i><b id="drXpT"></b></div>
+    <div id="drSk" class="slots"></div>
+  </div>
 </div>
 <div id="tbar">
   <button data-d="left">⚔️<span>Habilidades</span><i class="bdg" id="bdgSk"></i></button>
@@ -324,7 +353,7 @@ const CLS={
   {id:'a_pierce',n:'Flecha perforante',icon:'➳',desc:'Algunas flechas atraviesan a todos los enemigos en línea.',eff:l=>Math.round(100*(.08+.008*l))+'% de las flechas perforan'}
  ],
  necro:[
-  {id:'n_raise',n:'Levantar esqueletos',icon:'💀',desc:'Probabilidad de invocar un esqueleto cuando muere un enemigo.',eff:l=>Math.round(100*Math.min(.6,.15+.02*l))+'% prob. · '+(l>=16?3:l>=8?2:1)+' esqueleto(s) · duran '+f1(16+.4*l)+' s'},
+  {id:'n_raise',n:'Levantar esqueletos',icon:'💀',desc:'Probabilidad de invocar un esqueleto cuando muere un enemigo. No caducan con el tiempo: solo mueren si los matan.',eff:l=>Math.round(100*Math.min(.6,.15+.02*l))+'% prob. · '+(l>=16?3:l>=8?2:1)+' esqueleto(s) · no caducan, solo mueren en combate (máx. '+(6+Math.floor(l/3))+')'},
   {id:'n_vamp',n:'Vampiros',icon:'🦇',desc:'Vampiros vuelan a tu alrededor y atacan a los enemigos.',eff:l=>Math.min(6,2+Math.floor(l/4))+' vampiros permanentes que te curan al morder'},
   {id:'n_mummy',n:'Momias',icon:'🏺',desc:'Invoca momias resistentes que pelean contigo.',eff:l=>(2+Math.floor(l/6))+' momias resistentes · duran '+f1(35+.6*l)+' s · cada '+f1(Math.max(14,26-.6*l))+' s'},
   {id:'n_skeldragon',n:'Dragón esqueleto',icon:'🐉',desc:'Cuando tu dragón muere, vuelve como dragón esqueleto y sigue peleando. Requiere comprar el huevo como todos.',eff:l=>'Hasta '+(1+Math.floor((l-1)/4))+' dragón(es) esqueleto · fuerza '+Math.round(100*(.7+.035*l))+'%'},
@@ -1142,7 +1171,8 @@ function addAlly(kind,x,y,hp,dmg,life,src){
 function updateAllies(dt){
   const L=G.lvl;
   for(const a of G.allies){
-    a.life-=dt;a.cd-=dt;
+    if(a.perm)a.life=999;else a.life-=dt;
+    a.cd-=dt;
     const k=ALLYK[a.kind||'skel'];
     SRC=a.src||(a.kind==='golem'?'Golems de piedra':a.kind==='mummy'?'Momias':a.kind==='vamp'?'Vampiros':'Soldados esqueleto');
     let t=null,bd=1e12;
@@ -1282,7 +1312,7 @@ function heroOnKill(e){
   if(G.hero==='barbarian'&&clv('b_rage')){G.rage=Math.min(15+clv('b_rage'),(G.rage||0)+1);G.rageT=4}
   if(G.hero!=='necro'||G.inCorpse)return;
   const r=clv('n_raise');
-  if(r&&Math.random()<Math.min(.6,.15+.02*r)){let ns=0;for(const q of G.allies)if(q.kind==='skel')ns++;const cap=6+Math.floor(r/3);const n=Math.min(r>=16?3:r>=8?2:1,cap-ns);for(let i=0;i<n;i++)addAlly('skel',e.x+(i-1)*10,e.y,allyHp(50+10*r),hdmg(r)*1.0*tsc(),16+.4*r,'Esqueletos del nigromante')}
+  if(r&&Math.random()<Math.min(.6,.15+.02*r)){let ns=0;for(const q of G.allies)if(q.kind==='skel')ns++;const cap=6+Math.floor(r/3);const n=Math.min(r>=16?3:r>=8?2:1,cap-ns);for(let i=0;i<n;i++)addAlly('skel',e.x+(i-1)*10,e.y,allyHp(50+10*r),hdmg(r)*1.0*tsc(),16+.4*r,'Esqueletos del nigromante').perm=true}
   const c=clv('n_corpse');
   if(c&&Math.random()<Math.min(.4,.12+.01*c)){
     const ps=SRC;G.inCorpse=true;SRC='Explosión de cadáveres';
@@ -2111,10 +2141,10 @@ let selSkill=0,hovSkill=-1;
 const shopEls={},skEls=[],drEls={};
 function buildShop(){
   const box=$('#shop');box.innerHTML='';
-  const mk=(id,html)=>{const b=document.createElement('button');b.className='item';b.innerHTML=html;b.onclick=()=>buy(id);box.appendChild(b);shopEls[id]=b;return b};
-  mk('egg','<div class="nm"><span>🥚 Huevo de dragón</span><span class="co"></span></div><div class="ds ed"></div>');
-  for(const it of ITEMS)mk(it.id,'<div class="nm"><span>'+it.n+' <small class="lv"></small></span><span class="co"></span></div><div class="ds">'+it.ds+'</div>');
-  mk('potion','<div class="nm"><span>🧪 Poción de vida</span><span class="co"></span></div><div class="ds">Cura 50% de la vida máxima</div>');
+  const mk=(id,icon)=>{const b=document.createElement('button');b.className='slot';b.innerHTML='<span class="si">'+icon+'</span><span class="sl"></span><span class="sc"></span>';b.onclick=()=>buy(id);box.appendChild(b);shopEls[id]=b};
+  mk('egg','🥚');
+  for(const it of ITEMS)mk(it.id,it.n.split(' ')[0]);
+  mk('potion','🧪');
 }
 function itemCost(id){
   if(id==='egg')return G.dr.eggCost;
@@ -2139,17 +2169,16 @@ function buy(id){
   recalc();refreshAll();
 }
 function refreshShop(){
-  const nextLocked=SPS.find(x=>G.lvl<x.unlock);
   for(const id in shopEls){
     const b=shopEls[id],av=itemAvail(id),c=itemCost(id);
-    const sp0=id.startsWith('sp_')&&SPS.find(s=>'sp_'+s.id===id);
-    b.style.display=(sp0&&G.lvl<sp0.unlock&&sp0!==nextLocked)?'none':'';
     b.classList.toggle('off',!av||G.gold<c);
-    const co=b.querySelector('.co');
-    co.textContent=av?c+' 💰':(id==='egg'?(G.dr.egg?'Incubando':'Activo'):(sp0&&G.lvl<sp0.unlock?'Nv '+sp0.unlock:'MAX'));
-    const lv=b.querySelector('.lv');
-    if(lv){if(sp0)lv.textContent='('+G.spLv[sp0.id]+'/'+SPMAX+')';else{const it=ITEMS.find(i=>i.id===id);if(it)lv.textContent='('+G.items[id]+'/'+it.max+')'}}
-    if(id==='egg')b.querySelector('.ed').textContent=av?'Eclosiona en '+Math.min(120,EGG_TIME+10*G.dr.deaths)+' s. Si el dragón cae, el siguiente huevo cuesta más.':(G.dr.egg?'Tu huevo se está incubando.':'Tu dragón está activo.');
+    let name,desc,lv='';
+    if(id==='egg'){name='Huevo de dragón';desc=av?'Eclosiona en '+Math.min(120,EGG_TIME+10*G.dr.deaths)+' s. Si el dragón cae, el siguiente huevo cuesta más.':(G.dr.egg?'Tu huevo se está incubando.':'Tu dragón está activo.');lv=G.dr.egg?Math.ceil(G.dr.egg.t)+' s':(G.dragon?'✔':'')}
+    else if(id==='potion'){name='Poción de vida';desc='Cura el 50% de la vida máxima'}
+    else{const it=ITEMS.find(i=>i.id===id);name=it.n.split(' ').slice(1).join(' ');desc=it.ds;lv=G.items[id]+'/'+it.max}
+    b.querySelector('.sl').textContent=lv;
+    b.querySelector('.sc').textContent=av?c+' 💰':(id==='egg'?(G.dr.egg?'Incubando':'Activo'):'MAX');
+    b.title=name+' — '+desc+(av?' · Coste: '+c+' de oro':'');
   }
 }
 
@@ -2298,27 +2327,26 @@ const drRows={};
 function buildDragonUI(){
   const box=$('#drSk');box.innerHTML='';
   for(const d of DRSK){
-    const r=document.createElement('div');r.className='srow';
-    r.innerHTML='<span class="ic">'+d.icon+'</span><span class="nm"><span class="dnm"></span><small class="dl"></small></span><span class="lv"></span><button class="plus buy"></button>';
-    const b=r.querySelector('.buy');
+    const b=document.createElement('button');b.className='slot';
+    b.innerHTML='<span class="si">'+d.icon+'</span><span class="sl"></span><span class="sc"></span>';
     b.onclick=()=>{if(G.dr.pts>0)dragonUp(d.id,'pt');else dragonUp(d.id,'gold');refreshAll()};
-    box.appendChild(r);drRows[d.id]={dn:r.querySelector('.dnm'),dl:r.querySelector('.dl'),lv:r.querySelector('.lv'),b};
+    box.appendChild(b);drRows[d.id]={b,lv:b.querySelector('.sl'),cs:b.querySelector('.sc')};
   }
   $('#drAuto').onchange=e=>{G.dr.auto=e.target.checked};
 }
 function refreshDragonUI(){
   const dr=G.dr,dg=G.dragon,up=dr.pts>0;
-  $('#drStatus').textContent=dg?'🐉 Nv '+dr.lvl+(G.sdrags.length?' · 💀 x'+G.sdrags.length:'')+' · puntos: '+dr.pts:(dr.egg?'🥚 Incubando… '+Math.ceil(dr.egg.t)+' s':'Sin dragón: compra el huevo ('+dr.eggCost+' 💰)'+(dr.deaths?' · cayó '+dr.deaths+' vez/veces':'')+' · puntos: '+dr.pts);
+  $('#drStatus').textContent=dg?'🐉 Nv '+dr.lvl+(G.sdrags.length?' · 💀 x'+G.sdrags.length:'')+' · puntos: '+dr.pts:(dr.egg?'🥚 Incubando… '+Math.ceil(dr.egg.t)+' s':'Sin dragón: compra el huevo en el inventario ('+dr.eggCost+' 💰)'+(dr.deaths?' · cayó '+dr.deaths+' vez/veces':'')+' · puntos: '+dr.pts);
   $('#drHp').style.width=(dg?100*dg.hp/dg.max:0)+'%';$('#drHpT').textContent=dg?'Vida '+Math.ceil(dg.hp)+' / '+Math.ceil(dg.max):'Vida —';
   $('#drXp').style.width=(100*dr.xp/drNeed())+'%';$('#drXpT').textContent='XP '+Math.floor(dr.xp)+' / '+drNeed();
   $('#drAuto').checked=!!dr.auto;
   for(const d of DRSK){
     const e=drRows[d.id],l=dr.sk[d.id],max=l>=DRMAX,c=drCost(d.id);
-    e.dn.textContent=d.n;e.dl.textContent=d.d(l);
     e.lv.textContent=l+'/'+DRMAX;
-    e.b.textContent=max?'MAX':(up?'+ punto':'💰 '+c);
-    e.b.classList.toggle('gold',!up);
+    e.cs.textContent=max?'MAX':(up?'+ punto':c+' 💰');
+    e.b.classList.toggle('off',max||(!up&&G.gold<c));
     e.b.disabled=max||(!up&&G.gold<c);
+    e.b.title=d.n+' — '+d.d(l)+(max?'':(up?' · cuesta 1 punto de dragón':' · cuesta '+c+' de oro'));
   }
 }
 const heroEls={};
@@ -2493,7 +2521,7 @@ function refreshBadges(){
   if(b){b.textContent=G.dr.pts;b.style.display=G.dr.pts>0?'flex':'none'}
 }
 function setupDrawers(){
-  const map={left:'#left',shopc:'#shopc'};
+  const map={left:'#left',shopc:'#bottomp'};
   const btns=document.querySelectorAll('#tbar button');
   const unpause=()=>{if(G.drawerPause){G.paused=false;G.drawerPause=false}};
   const closeAll=()=>{for(const k in map)$(map[k]).classList.remove('open');btns.forEach(b=>b.classList.remove('on'));unpause()};
@@ -2571,6 +2599,8 @@ function frame(now){
 resize();buildShop();buildSkillsMenu();buildPowers();buildDragonUI();buildBar();buildRankBtn();buildTabs();setupDrawers();
 {let z=NaN;try{z=parseFloat(localStorage.getItem('mago_zoom'))}catch(e){}if(z)Z=Math.max(.5,Math.min(1.8,z));else if(typeof innerWidth!=='undefined'&&innerWidth<700)Z=.7}
 newGame();showStart();
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>resize()).observe($('#game'));
+setTimeout(resize,60);
 requestAnimationFrame(t=>{last=t;frame(t)});
 </script>
 </body>
