@@ -39,7 +39,7 @@ input[type=text]{background:#0f0e1c;border:1px solid #3a3566;color:#fff;font:inh
 table.rank{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
 table.rank td,table.rank th{padding:3px 6px;border-bottom:1px solid var(--line)}
 table.rank tr.me td{background:#2a2450;color:var(--gold)}
-.heroes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.heroes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .hcard{background:#1a1832;border:2px solid #2f2b57;border-radius:12px;padding:6px;cursor:pointer;transition:transform .12s,border-color .12s}
 .hcard:hover{transform:translateY(-3px)}
 .hcard.on{border-color:var(--gold);box-shadow:0 0 16px #ffd24a44}
@@ -292,6 +292,8 @@ const HEROES={
  archer:{n:'Arquero elfo',icon:'🏹',hp:90,col:'#7be07b',desc:'Daño preciso a distancia: críticos, flechas múltiples, veneno y esquiva.',basic:{n:'Flecha',type:'phys',cd:.8,spd:720,m:1.75,col:'#e6d28a'}},
  necro:{n:'Nigromante',icon:'💀',hp:95,col:'#9be07b',desc:'Ejército de no-muertos: esqueletos, vampiros, momias, muro de huesos y dragón esqueleto.',basic:{n:'Proyectil de hueso',type:'dark',cd:1,spd:430,m:1.9,col:'#b8f08a'}},
  dwarf:{n:'Enano artillero',icon:'🔫',hp:140,col:'#ffb35a',desc:'Fusil, granadas, minas y torreta. Muy resistente.',basic:{n:'Disparo de fusil',type:'phys',cd:1.2,spd:900,m:2.8,col:'#ffd27a'}}
+ ,
+ barbarian:{n:'Bárbaro',icon:'🪓',hp:135,col:'#d9503a',desc:'Lanza hachas giratorias que van y vuelven atravesando a los enemigos. La furia lo hace más fuerte al estar herido.',basic:{n:'Hacha giratoria',type:'phys',cd:1.0,spd:560,m:1.5,col:'#cfd3da'}}
 };
 const CLSMAX=20;
 const clv=id=>(G&&G.cls&&G.cls[id])||0;
@@ -339,6 +341,16 @@ const CLS={
   {id:'d_mines',n:'Campo minado',icon:'🧨',desc:'Siembra minas a tu alrededor que explotan al pisarlas.',eff:l=>'Hasta '+(4+Math.floor(l/2))+' minas · radio '+Math.round(60+1.2*l)},
   {id:'d_turret',n:'Torreta',icon:'🗼',desc:'Despliega torretas automáticas que disparan a los enemigos.',eff:l=>Math.min(3,1+Math.floor(l/8))+' torreta(s) · duran '+f1(25+.5*l)+' s · cada '+f1(Math.max(20,36-.8*l))+' s'},
   {id:'d_armor',n:'Armadura de hierro',icon:'🛡️',desc:'Más vida máxima y menos daño recibido.',eff:l=>'+'+(4*l)+'% vida · -'+f1(1.2*l)+'% daño recibido'}
+ ],
+ barbarian:[
+  {id:'b_crit',n:'Golpe crítico',icon:'💥',desc:'Tus hachas pueden hacer golpes críticos.',eff:l=>Math.round(100*Math.min(.6,.10+.025*l))+'% prob. · daño x'+f1(2+.12*l)},
+  {id:'b_multi',n:'Hachas múltiples',icon:'🪓',desc:'Lanzas varias hachas a la vez, cada una a un enemigo distinto.',eff:l=>Math.min(4,1+Math.floor(l/4))+' hachas por lanzamiento'},
+  {id:'b_aspd',n:'Velocidad de lanzamiento',icon:'⚡',desc:'Lanzas las hachas más rápido.',eff:l=>'+'+(4*l)+'% velocidad de lanzamiento'},
+  {id:'b_stun',n:'Hacha aturdidora',icon:'💫',desc:'Posibilidad de aturdir al enemigo golpeado.',eff:l=>Math.round(100*Math.min(.3,.06+.012*l))+'% prob. · '+f1(.8+.02*l)+' s'},
+  {id:'b_bleed',n:'Sangrado',icon:'🩸',desc:'Las hachas hacen sangrar a los enemigos (daño en el tiempo que se acumula).',eff:l=>'Sangrado durante 4 s · '+Math.round(100*(.18+.012*l))+'% del golpe por segundo'},
+  {id:'b_rage',n:'Furia',icon:'😡',desc:'Cuanta menos vida tienes, más rápido y fuerte lanzas las hachas.',eff:l=>'Hasta +'+Math.round(100*(.4+.04*l))+'% de daño y velocidad con poca vida'},
+  {id:'b_whirl',n:'Torbellino de hachas',icon:'🌀',desc:'Unas hachas giran a tu alrededor un rato y trituran a quien se acerque.',eff:l=>'Radio '+Math.round(95+2.5*l)+' · '+f1(4+.1*l)+' s · cada '+f1(Math.max(8,15-.4*l))+' s'},
+  {id:'b_shout',n:'Grito de guerra',icon:'📢',desc:'Aturde y empuja a los enemigos cercanos y te da más velocidad de ataque unos segundos.',eff:l=>'Radio '+(150+3*l)+' · aturde '+f1(1+.04*l)+' s · cada '+f1(Math.max(12,24-.5*l))+' s'}
  ]
 };
 const clsCost=id=>Math.round(90*Math.pow(1.3,clv(id)));
@@ -466,6 +478,7 @@ function hitEnemy(p,e){
   }
   if(p.burn)addDot(e,'fire',p.dmg*.35,3,false);
   if(p.pdps)addDot(e,'poison',p.pdps,5,true);
+  if(p.bleed)addDot(e,'phys',p.bleed,4,true);
   if(p.slow&&mult(e,p.type)>0)e.slow={a:p.slow,t:2.5};
   if(p.splash){
     for(const o of G.enemies){if(o===e||o.dead)continue;
@@ -1164,7 +1177,36 @@ function wallHit(e,dist,dt){
 }
 
 /* ============ ATAQUE BÁSICO Y HABILIDADES DE HÉROE ============ */
+const rageMul=()=>clv('b_rage')?1+(1-Math.max(0,G.hp)/S.maxHp)*(.4+.04*clv('b_rage')):1;
+function shotAxe(t,dmg,b){
+  let d=dmg*rageMul(),crit=false;
+  const cl=clv('b_crit');
+  if(cl&&Math.random()<Math.min(.6,.10+.025*cl)){d*=2+.12*cl;crit=true}
+  const a=Math.atan2(t.y-cy(),t.x-cx()),dist=Math.hypot(t.x-cx(),t.y-cy());
+  const p={kind:'boom',axe:true,x:cx(),y:cy()-8,vx:Math.cos(a)*b.spd,vy:Math.sin(a)*b.spd,spd:b.spd,size:11,type:b.type,dmg:d,phase:0,maxD:Math.min(dist+110,600),trav:0,hit:new Set(),life:6,src:b.n,col:b.col};
+  const sl=clv('b_stun');if(sl){p.stunC=Math.min(.3,.06+.012*sl);p.stunT=.8+.02*sl}
+  if(clv('b_bleed'))p.bleed=d*(.18+.012*clv('b_bleed'));
+  if(crit){p.crit=true;p.critT='¡CRÍTICO x'+f1(2+.12*cl)+'!';p.size*=1.3}
+  G.projs.push(p);
+}
+function updateBoom(p,dt){
+  p.life-=dt;p.rot=(p.rot||0)+dt*16;
+  if(p.phase===0){
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.trav+=p.spd*dt;
+    if(p.trav>=p.maxD){p.phase=1;p.hit=new Set()}
+  }else{
+    const dx=cx()-p.x,dy=cy()-8-p.y,d=Math.hypot(dx,dy),st=p.spd*1.15*dt;
+    if(d<=st+14){p.dead=true;return}
+    p.x+=dx/d*st;p.y+=dy/d*st;
+  }
+  for(const e of G.enemies){
+    if(e.dead||p.hit.has(e))continue;
+    if((e.x-p.x)**2+(e.y-p.y)**2<(p.size+e.r)**2){p.hit.add(e);hitEnemy(p,e)}
+  }
+  if(p.life<=0)p.dead=true;
+}
 function shot(t,dmg,b,h){
+  if(h==='barbarian')return shotAxe(t,dmg,b);
   let d=dmg,crit=false;
   const cl=h==='archer'?clv('a_crit'):h==='dwarf'?clv('d_crit'):0;
   if(cl&&Math.random()<Math.min(.6,.10+.025*cl)){d*=2+.12*cl;crit=true}
@@ -1191,6 +1233,7 @@ function fireBasic(){
   let n=1,burst=1,rate=b.cd;
   if(h==='archer'){rate/=1+.03*clv('a_aspd');n=Math.min(4,1+Math.floor(clv('a_multi')/5))}
   if(h==='dwarf'){rate/=1+.04*clv('d_aspd');burst=Math.min(5,1+Math.floor(clv('d_multi')/4))}
+  if(h==='barbarian'){rate/=(1+.04*clv('b_aspd'))*rageMul();n=Math.min(4,1+Math.floor(clv('b_multi')/4))}
   let tg=pick(n,b.type,dmg,1e5);
   /* nunca quedarse sin objetivo: prioriza a quien ya te golpea y, si no hay candidatos, dispara al más cercano */
   let close=null,cd0=1e12;
@@ -1403,6 +1446,37 @@ function updateHero(dt){
       }
       G.turrets=G.turrets.filter(t=>t.life>0);
     }
+  }else if(h==='barbarian'){
+    if((l=clv('b_whirl'))){
+      if(T.whirlOn>0){
+        T.whirlOn-=dt;T.whirlTk=(T.whirlTk??0)-dt;
+        if(T.whirlTk<=0){
+          T.whirlTk=.25;SRC='Torbellino de hachas';
+          const R=95+2.5*l,d=hdmg(l)*.9;
+          for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r)dealDamage(e,d,'phys')}
+        }
+      }else if(rdy('b_whirl')){
+        if(countNear(x0,y0,110+2.5*l)<2)retry('b_whirl');
+        else{T.whirlOn=4+.1*l;T.whirlTk=0;done('b_whirl',Math.max(8,15-.4*l))}
+      }
+    }
+    if((l=clv('b_shout'))&&rdy('b_shout')){
+      const R=150+3*l;
+      if(countNear(x0,y0,R*.8)<3)retry('b_shout');
+      else{
+        SRC='Grito de guerra';const d=hdmg(l)*.7;
+        for(const e of G.enemies){
+          if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);
+          if(dd>R+e.r)continue;
+          dealDamage(e,d,'phys');
+          if(!e.dead){e.stun=1+.04*l;if(dd>1){e.x+=dx/dd*70;e.y+=dy/dd*70}}
+        }
+        G.haste=Math.max(G.haste,5+.15*l);
+        G.fx.push({k:'ring',x:x0,y:y0,r:R,t:.35,c:'#ff7a5a'});
+        txt(x0,y0-70,'📢 ¡GRITO DE GUERRA!','#ff7a5a',18);
+        done('b_shout',Math.max(12,24-.5*l));
+      }
+    }
   }
 }
 
@@ -1521,7 +1595,8 @@ function update(dt){
   updateEShots(dt);
   // proyectiles
   for(const p of G.projs){
-    if(p.kind==='orb'){
+    if(p.kind==='boom'){updateBoom(p,dt)}
+    else if(p.kind==='orb'){
       p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;
       for(const e of G.enemies){
         if(e.dead||p.hit.has(e))continue;
@@ -1552,6 +1627,14 @@ function update(dt){
   if(G.hp<=0)gameOver();
 }
 
+function drawAxe(p){
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot||0);const sc=(p.size||11)/11*1.55;ctx.scale(sc,sc);
+  ctx.strokeStyle='#7a5a2b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(12,0);ctx.stroke();
+  ctx.fillStyle=p.crit?'#ffb0a0':'#cfd3da';ctx.strokeStyle='#5a6070';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(6,-2);ctx.quadraticCurveTo(17,-15,3,-12);ctx.lineTo(2,-2);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(6,2);ctx.quadraticCurveTo(17,15,3,12);ctx.lineTo(2,2);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.restore();
+}
 function drawArrow(p){
   const a=p.kind==='orb'?Math.atan2(p.vy,p.vx):(p.ang||0),L=p.crit?30:22,pois=!!p.pdps;
   ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);
@@ -1613,6 +1696,22 @@ function drawHeroOn(c,x,y,h,t,aim,sc){
     fl('#e8ecde',()=>c.arc(17,-19,5.5,0,6.3));
     c.fillStyle='#17261d';c.fillRect(14.5,-21,2,2.5);c.fillRect(18,-21,2,2.5);
     for(let i=0;i<3;i++){const a=t*1.8+i*2.1;c.fillStyle='#7be07b99';c.beginPath();c.arc(Math.cos(a)*24,8+Math.sin(a)*6-Math.abs(Math.sin(a*1.3))*8,2,0,6.3);c.fill()}
+  }else if(h==='barbarian'){
+    fl('#6b4a2a',()=>{c.moveTo(-15,-8);c.lineTo(15,-8);c.lineTo(17,0);c.lineTo(-17,0);c.closePath()});
+    fl('#d9a075',()=>{c.rect(-12,-6,24,22)});
+    fl('#8a5a2b',()=>{c.rect(-13,10,26,10)});
+    c.fillStyle='#d9a075';c.fillRect(-18,-4,6,16);c.fillRect(12,-4,6,16);
+    fl('#d9a075',()=>c.arc(0,-13,7,0,6.3));
+    fl('#c0402a',()=>{c.moveTo(-8,-15);c.quadraticCurveTo(0,-30,8,-15);c.quadraticCurveTo(0,-19,-8,-15)});
+    fl('#c0402a',()=>{c.moveTo(-6,-10);c.quadraticCurveTo(0,6,6,-10);c.quadraticCurveTo(0,-5,-6,-10)});
+    c.fillStyle='#222';c.fillRect(-3.5,-14.5,2,2);c.fillRect(1.5,-14.5,2,2);
+    c.strokeStyle='#3a8ad9';c.lineWidth=1.5;c.beginPath();c.moveTo(-6,-12);c.lineTo(6,-12);c.stroke();
+    c.save();c.translate(2,2);c.rotate(aim);
+    c.strokeStyle='#7a5a2b';c.lineWidth=3;c.beginPath();c.moveTo(0,0);c.lineTo(24,0);c.stroke();
+    c.fillStyle='#cfd3da';c.strokeStyle='#5a6070';c.lineWidth=1;
+    c.beginPath();c.moveTo(20,-1);c.quadraticCurveTo(34,-14,22,-12);c.lineTo(19,-1);c.closePath();c.fill();c.stroke();
+    c.beginPath();c.moveTo(20,1);c.quadraticCurveTo(34,14,22,12);c.lineTo(19,1);c.closePath();c.fill();c.stroke();
+    c.restore();
   }else{
     fl('#7a4a22',()=>{c.rect(-14,-6,28,26)});
     fl('#b9794a',()=>{c.rect(-10,-4,20,20)});
@@ -1645,6 +1744,11 @@ function drawAllies(){
 }
 function drawClassFx(x0,y0){
   const h=G.hero;
+  if(h==='barbarian'&&G.ht&&G.ht.whirlOn>0){
+    const R=95+2.5*clv('b_whirl');
+    ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='rgba(217,80,58,.10)';ctx.fill();
+    for(let i=0;i<4;i++){const a=G.t*9+i*1.571;drawAxe({x:x0+Math.cos(a)*R*.8,y:y0+Math.sin(a)*R*.8,rot:G.t*18+i,size:13})}
+  }
   if(h==='mage'&&clv('m_field')){
     const R=70+2.2*clv('m_field');
     ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='#fff04a12';ctx.fill();ctx.strokeStyle='#fff04acc';ctx.lineWidth=1.5;ctx.stroke();
@@ -1734,6 +1838,7 @@ function draw(){
   // proyectiles
   for(const p of G.projs){
     if(p.arrow){drawArrow(p);continue}
+    if(p.axe){drawAxe(p);continue}
     const c=p.col||TYPES[p.type].c;
     if(p.giant)ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,6.3);ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;
     if(p.kind==='orb'){ctx.beginPath();ctx.arc(p.x,p.y,p.size*.5,0,6.3);ctx.fillStyle='#000';ctx.fill()}
@@ -2122,7 +2227,7 @@ function showStart(){
   const o=$('#overlay');o.style.display='flex';
   let nick='';try{nick=localStorage.getItem('mago_nick')||'';selHero=localStorage.getItem('mago_hero')||selHero}catch(e){}
   if(!HEROES[selHero])selHero='mage';
-  o.innerHTML='<div class="card" style="max-width:780px;text-align:center"><h1>🧙 Mago Infinito</h1><p>Elige tu héroe y sobrevive el mayor tiempo posible.</p><div class="heroes" id="heroes"></div>'+
+  o.innerHTML='<div class="card" style="max-width:860px;text-align:center"><h1>🧙 Mago Infinito</h1><p>Elige tu héroe y sobrevive el mayor tiempo posible.</p><div class="heroes" id="heroes"></div>'+
     '<div id="heroDesc" class="sub" style="min-height:34px;margin:8px 0"></div>'+
     '<div style="margin:6px 0"><input type="text" id="nick" maxlength="16" placeholder="Tu apodo" value="'+esc(nick)+'"> <span title="Detectada por tu navegador">'+flagEmoji(FLAG)+' '+esc(FLAG||'')+'</span></div>'+
     '<button class="btn" id="play">Jugar</button> <button class="btn alt" id="rk">🏆 Ranking</button></div>';
