@@ -327,7 +327,7 @@ const CLS={
   {id:'n_vamp',n:'Vampiros',icon:'🦇',desc:'Vampiros vuelan a tu alrededor y atacan a los enemigos.',eff:l=>Math.min(6,2+Math.floor(l/4))+' vampiros permanentes que te curan al morder'},
   {id:'n_mummy',n:'Momias',icon:'🏺',desc:'Invoca momias resistentes que pelean contigo.',eff:l=>(2+Math.floor(l/6))+' momias resistentes · duran '+f1(35+.6*l)+' s · cada '+f1(Math.max(14,26-.6*l))+' s'},
   {id:'n_skeldragon',n:'Dragón esqueleto',icon:'🐉',desc:'Cuando tu dragón muere, vuelve como dragón esqueleto y sigue peleando. Requiere comprar el huevo como todos.',eff:l=>'Hasta '+(1+Math.floor((l-1)/4))+' dragón(es) esqueleto · fuerza '+Math.round(100*(.7+.035*l))+'%'},
-  {id:'n_wall',n:'Muro de huesos',icon:'🦴',desc:'Un muro de huesos te rodea; los enemigos deben romperlo para pasar.',eff:l=>'Dura '+f1(10+.4*l)+' s · cada '+f1(Math.max(14,26-.6*l))+' s · daña a quien lo ataca'},
+  {id:'n_wall',n:'Muro de huesos',icon:'🦴',desc:'Un anillo de huesos te rodea para siempre: empuja fuera a los enemigos que estén dentro, se regenera, se reconstruye si se rompe y hiere a quien lo ataca.',eff:l=>'Anillo permanente · resiste '+Math.round(45+7*l)+' · se regenera y se reconstruye solo · daña a quien lo ataca'},
   {id:'n_pest',n:'Pestilencia',icon:'☣️',desc:'Una nube de pestilencia te rodea, daña y ralentiza a los enemigos.',eff:l=>'Radio '+(120+4*l)+' · ralentiza '+Math.round(100*Math.min(.65,.3+.015*l))+'% y daña'},
   {id:'n_curse',n:'Maldición',icon:'👁️',desc:'Maldice a los enemigos: reciben más daño durante unos segundos.',eff:l=>'+'+Math.round(100*(.30+.025*l))+'% de daño recibido y -15% de su daño · '+f1(8+.25*l)+' s · cada '+f1(Math.max(9,18-.5*l))+' s'},
   {id:'n_corpse',n:'Explosión de cadáveres',icon:'💣',desc:'Los enemigos muertos pueden explotar y dañar a los de alrededor.',eff:l=>Math.round(100*Math.min(.4,.12+.01*l))+'% prob. · radio '+Math.round(80+1.8*l)}
@@ -343,14 +343,14 @@ const CLS={
   {id:'d_armor',n:'Armadura de hierro',icon:'🛡️',desc:'Más vida máxima y menos daño recibido.',eff:l=>'+'+(4*l)+'% vida · -'+f1(1.2*l)+'% daño recibido'}
  ],
  barbarian:[
-  {id:'b_crit',n:'Golpe crítico',icon:'💥',desc:'Tus hachas pueden hacer golpes críticos.',eff:l=>Math.round(100*Math.min(.6,.10+.025*l))+'% prob. · daño x'+f1(2+.12*l)},
-  {id:'b_multi',n:'Hachas múltiples',icon:'🪓',desc:'Lanzas varias hachas a la vez, cada una a un enemigo distinto.',eff:l=>Math.min(4,1+Math.floor(l/4))+' hachas por lanzamiento'},
-  {id:'b_aspd',n:'Velocidad de lanzamiento',icon:'⚡',desc:'Lanzas las hachas más rápido.',eff:l=>'+'+(4*l)+'% velocidad de lanzamiento'},
-  {id:'b_stun',n:'Hacha aturdidora',icon:'💫',desc:'Posibilidad de aturdir al enemigo golpeado.',eff:l=>Math.round(100*Math.min(.3,.06+.012*l))+'% prob. · '+f1(.8+.02*l)+' s'},
-  {id:'b_bleed',n:'Sangrado',icon:'🩸',desc:'Las hachas hacen sangrar a los enemigos (daño en el tiempo que se acumula).',eff:l=>'Sangrado durante 4 s · '+Math.round(100*(.18+.012*l))+'% del golpe por segundo'},
-  {id:'b_rage',n:'Furia',icon:'😡',desc:'Cuanta menos vida tienes, más rápido y fuerte lanzas las hachas.',eff:l=>'Hasta +'+Math.round(100*(.4+.04*l))+'% de daño y velocidad con poca vida'},
-  {id:'b_whirl',n:'Torbellino de hachas',icon:'🌀',desc:'Unas hachas giran a tu alrededor un rato y trituran a quien se acerque.',eff:l=>'Radio '+Math.round(95+2.5*l)+' · '+f1(4+.1*l)+' s · cada '+f1(Math.max(8,15-.4*l))+' s'},
-  {id:'b_shout',n:'Grito de guerra',icon:'📢',desc:'Aturde y empuja a los enemigos cercanos y te da más velocidad de ataque unos segundos.',eff:l=>'Radio '+(150+3*l)+' · aturde '+f1(1+.04*l)+' s · cada '+f1(Math.max(12,24-.5*l))+' s'}
+  {id:'b_crit',n:'Golpe crítico',icon:'💥',desc:'Tus hachas pueden hacer golpes críticos.',eff:l=>Math.round(100*Math.min(.7,.12+.03*l))+'% prob. · daño x'+f1(2+.15*l)},
+  {id:'b_multi',n:'Hachas múltiples',icon:'🪓',desc:'Lanzas varias hachas a la vez, cada una a un enemigo distinto.',eff:l=>Math.min(6,1+Math.floor(l/3))+' hachas por lanzamiento'},
+  {id:'b_aspd',n:'Velocidad de lanzamiento',icon:'⚡',desc:'Lanzas las hachas más rápido.',eff:l=>'+'+(5*l)+'% velocidad de lanzamiento'},
+  {id:'b_giant',n:'Hachas gigantes',icon:'🪓',desc:'Tus hachas crecen de tamaño: golpean a muchos más enemigos a la vez y pegan más fuerte.',eff:l=>'+'+(7*l)+'% de tamaño · +'+(3*l)+'% de daño'},
+  {id:'b_bleed',n:'Sangrado',icon:'🩸',desc:'Las hachas hacen sangrar a los enemigos (daño en el tiempo que se acumula).',eff:l=>'Sangrado durante 4 s · '+Math.round(100*(.35+.02*l))+'% del golpe por segundo (se acumula)'},
+  {id:'b_rage',n:'Furia',icon:'😡',desc:'Cada enemigo que matas te da furia: más daño y más velocidad durante unos segundos. Con poca vida, aún más.',eff:l=>'+'+f1(2+.2*l)+'% por baja (hasta '+(15+l)+' bajas, 4 s) · +'+Math.round(30+2*l)+'% con poca vida'},
+  {id:'b_whirl',n:'Torbellino de hachas',icon:'🌀',desc:'Unas hachas giran a tu alrededor un rato y trituran a quien se acerque.',eff:l=>'Radio '+Math.round(110+3*l)+' · '+f1(5+.15*l)+' s · cada '+f1(Math.max(7,13-.35*l))+' s · daño alto'},
+  {id:'b_shout',n:'Grito de guerra',icon:'📢',desc:'Aturde y empuja a los enemigos cercanos y te da más velocidad de ataque unos segundos.',eff:l=>'Radio '+(150+3*l)+' · aturde '+f1(1.2+.05*l)+' s · cada '+f1(Math.max(10,20-.4*l))+' s · +50% velocidad'}
  ]
 };
 const clsCost=id=>Math.round(90*Math.pow(1.3,clv(id)));
@@ -1172,21 +1172,21 @@ function wallHit(e,dist,dt){
   const n=w.segs.length,idx=Math.floor(((Math.atan2(e.y-cy(),e.x-cx())+6.283)%6.283)/6.283*n);
   const sg=w.segs[idx];if(!sg||sg.hp<=0)return false;
   sg.hp-=e.dmg*dt;
-  const th=hdmg(clv('n_wall'))*1.2*tsc()*dt;G.dmgBy['Muro de huesos']=(G.dmgBy['Muro de huesos']||0)+Math.min(th,Math.max(0,e.hp));e.hp-=th;if(e.hp<=0)kill(e);
+  const th=hdmg(clv('n_wall'))*.8*tsc()*dt;G.dmgBy['Muro de huesos']=(G.dmgBy['Muro de huesos']||0)+Math.min(th,Math.max(0,e.hp));e.hp-=th;if(e.hp<=0)kill(e);
   return true;
 }
 
 /* ============ ATAQUE BÁSICO Y HABILIDADES DE HÉROE ============ */
-const rageMul=()=>clv('b_rage')?1+(1-Math.max(0,G.hp)/S.maxHp)*(.4+.04*clv('b_rage')):1;
+const rageMul=()=>{const l=clv('b_rage');if(!l)return 1;return 1+(G.rage||0)*(.02+.002*l)+(1-Math.max(0,G.hp)/S.maxHp)*(.3+.02*l)};
 function shotAxe(t,dmg,b){
   let d=dmg*rageMul(),crit=false;
   const cl=clv('b_crit');
-  if(cl&&Math.random()<Math.min(.6,.10+.025*cl)){d*=2+.12*cl;crit=true}
+  if(cl&&Math.random()<Math.min(.7,.12+.03*cl)){d*=2+.15*cl;crit=true}
   const a=Math.atan2(t.y-cy(),t.x-cx()),dist=Math.hypot(t.x-cx(),t.y-cy());
   const p={kind:'boom',axe:true,x:cx(),y:cy()-8,vx:Math.cos(a)*b.spd,vy:Math.sin(a)*b.spd,spd:b.spd,size:11,type:b.type,dmg:d,phase:0,maxD:Math.min(dist+110,600),trav:0,hit:new Set(),life:6,src:b.n,col:b.col};
-  const sl=clv('b_stun');if(sl){p.stunC=Math.min(.3,.06+.012*sl);p.stunT=.8+.02*sl}
-  if(clv('b_bleed'))p.bleed=d*(.18+.012*clv('b_bleed'));
-  if(crit){p.crit=true;p.critT='¡CRÍTICO x'+f1(2+.12*cl)+'!';p.size*=1.3}
+  const gz=clv('b_giant');if(gz){p.size*=1+.07*gz;p.dmg*=1+.03*gz}
+  if(clv('b_bleed'))p.bleed=d*(.35+.02*clv('b_bleed'));
+  if(crit){p.crit=true;p.critT='¡CRÍTICO x'+f1(2+.15*cl)+'!';p.size*=1.3}
   G.projs.push(p);
 }
 function updateBoom(p,dt){
@@ -1233,7 +1233,7 @@ function fireBasic(){
   let n=1,burst=1,rate=b.cd;
   if(h==='archer'){rate/=1+.03*clv('a_aspd');n=Math.min(4,1+Math.floor(clv('a_multi')/5))}
   if(h==='dwarf'){rate/=1+.04*clv('d_aspd');burst=Math.min(5,1+Math.floor(clv('d_multi')/4))}
-  if(h==='barbarian'){rate/=(1+.04*clv('b_aspd'))*rageMul();n=Math.min(4,1+Math.floor(clv('b_multi')/4))}
+  if(h==='barbarian'){rate/=(1+.05*clv('b_aspd'))*rageMul();n=Math.min(6,1+Math.floor(clv('b_multi')/3))}
   let tg=pick(n,b.type,dmg,1e5);
   /* nunca quedarse sin objetivo: prioriza a quien ya te golpea y, si no hay candidatos, dispara al más cercano */
   let close=null,cd0=1e12;
@@ -1253,6 +1253,7 @@ function fireBasic(){
   G.basicCd=rate/(S.atk*(G.haste>0?1.5:1));
 }
 function heroOnKill(e){
+  if(G.hero==='barbarian'&&clv('b_rage')){G.rage=Math.min(15+clv('b_rage'),(G.rage||0)+1);G.rageT=4}
   if(G.hero!=='necro'||G.inCorpse)return;
   const r=clv('n_raise');
   if(r&&Math.random()<Math.min(.6,.15+.02*r)){let ns=0;for(const q of G.allies)if(q.kind==='skel')ns++;const cap=6+Math.floor(r/3);const n=Math.min(r>=16?3:r>=8?2:1,cap-ns);for(let i=0;i<n;i++)addAlly('skel',e.x+(i-1)*10,e.y,allyHp(50+10*r),hdmg(r)*1.0*tsc(),16+.4*r,'Esqueletos del nigromante')}
@@ -1271,7 +1272,18 @@ function updateHero(dt){
   const done=(id,cd)=>{T[id]=cd};
   const retry=id=>{T[id]=.4};
   let l;
-  if(G.walls){G.walls.t-=dt;if(G.walls.t<=0||G.walls.segs.every(q=>q.hp<=0))G.walls=null}
+  if(G.walls){
+    const l2=clv('n_wall'),mx2=allyHp(45+7*l2);
+    for(const sg of G.walls.segs){
+      if(sg.max!==mx2){sg.hp*=mx2/sg.max;sg.max=mx2}
+      if(sg.hp>0)sg.hp=Math.min(mx2,sg.hp+mx2*(.02+.001*l2)*dt);
+      else{
+        if(!sg.rt)sg.rt=Math.max(6,13-.3*l2);
+        sg.rt-=dt;
+        if(sg.rt<=0){sg.hp=mx2*.4;sg.rt=0}
+      }
+    }
+  }
   if(h==='mage'){
     if((l=clv('m_missiles'))&&rdy('m_missiles')){
       SRC='Misiles arcanos extra';
@@ -1362,13 +1374,17 @@ function updateHero(dt){
         done('n_mummy',Math.max(14,26-.6*l));
       }
     }
-    if((l=clv('n_wall'))&&rdy('n_wall')){
-      if(countNear(x0,y0,range)<3)retry('n_wall');
-      else{
-        const segs=[];for(let i=0;i<14;i++){const hp=allyHp(80+14*l);segs.push({hp,max:hp})}
-        G.walls={R:82,t:10+.4*l,segs};
-        done('n_wall',Math.max(14,26-.6*l));
+    if((l=clv('n_wall'))&&!G.walls){
+      const mx=allyHp(45+7*l),segs=[];
+      for(let i=0;i<14;i++)segs.push({hp:mx,max:mx,rt:0});
+      G.walls={R:82,segs};
+      for(const e of G.enemies){
+        if(e.dead)continue;
+        const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy)||1;
+        if(dd<82+e.r+6){e.x=x0+dx/dd*(82+e.r+12);e.y=y0+dy/dd*(82+e.r+12);e.stun=Math.max(e.stun||0,.6)}
       }
+      G.fx.push({k:'ring',x:x0,y:y0,r:92,t:.4,c:'#e8e1c8'});
+      txt(x0,y0-70,'🦴 ¡Muro de huesos!','#e8e1c8',16);
     }
     if((l=clv('n_pest'))){
       T.pestTk=(T.pestTk??0)-dt;
@@ -1447,34 +1463,35 @@ function updateHero(dt){
       G.turrets=G.turrets.filter(t=>t.life>0);
     }
   }else if(h==='barbarian'){
+    if(G.rageT>0){G.rageT-=dt;if(G.rageT<=0)G.rage=0}
     if((l=clv('b_whirl'))){
       if(T.whirlOn>0){
         T.whirlOn-=dt;T.whirlTk=(T.whirlTk??0)-dt;
         if(T.whirlTk<=0){
           T.whirlTk=.25;SRC='Torbellino de hachas';
-          const R=95+2.5*l,d=hdmg(l)*.9;
+          const R=110+3*l,d=hdmg(l)*1.6;
           for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r)dealDamage(e,d,'phys')}
         }
       }else if(rdy('b_whirl')){
-        if(countNear(x0,y0,110+2.5*l)<2)retry('b_whirl');
-        else{T.whirlOn=4+.1*l;T.whirlTk=0;done('b_whirl',Math.max(8,15-.4*l))}
+        if(countNear(x0,y0,120+3*l)<1)retry('b_whirl');
+        else{T.whirlOn=5+.15*l;T.whirlTk=0;done('b_whirl',Math.max(7,13-.35*l))}
       }
     }
     if((l=clv('b_shout'))&&rdy('b_shout')){
       const R=150+3*l;
-      if(countNear(x0,y0,R*.8)<3)retry('b_shout');
+      if(countNear(x0,y0,R*.8)<2)retry('b_shout');
       else{
-        SRC='Grito de guerra';const d=hdmg(l)*.7;
+        SRC='Grito de guerra';const d=hdmg(l)*1.5;
         for(const e of G.enemies){
           if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);
           if(dd>R+e.r)continue;
           dealDamage(e,d,'phys');
-          if(!e.dead){e.stun=1+.04*l;if(dd>1){e.x+=dx/dd*70;e.y+=dy/dd*70}}
+          if(!e.dead){e.stun=1.2+.05*l;if(dd>1){e.x+=dx/dd*70;e.y+=dy/dd*70}}
         }
         G.haste=Math.max(G.haste,5+.15*l);
         G.fx.push({k:'ring',x:x0,y:y0,r:R,t:.35,c:'#ff7a5a'});
         txt(x0,y0-70,'📢 ¡GRITO DE GUERRA!','#ff7a5a',18);
-        done('b_shout',Math.max(12,24-.5*l));
+        done('b_shout',Math.max(10,20-.4*l));
       }
     }
   }
@@ -1743,8 +1760,9 @@ function drawAllies(){
 }
 function drawClassFx(x0,y0){
   const h=G.hero;
+  if(h==='barbarian'&&(G.rage||0)>2){ctx.beginPath();ctx.arc(x0,y0,36+Math.min(12,G.rage),0,6.3);ctx.fillStyle='rgba(224,60,40,'+Math.min(.28,G.rage*.02)+')';ctx.fill()}
   if(h==='barbarian'&&G.ht&&G.ht.whirlOn>0){
-    const R=95+2.5*clv('b_whirl');
+    const R=110+3*clv('b_whirl');
     ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='rgba(217,80,58,.10)';ctx.fill();
     for(let i=0;i<4;i++){const a=G.t*9+i*1.571;drawAxe({x:x0+Math.cos(a)*R*.8,y:y0+Math.sin(a)*R*.8,rot:G.t*18+i,size:13})}
   }
@@ -1763,7 +1781,10 @@ function drawClassFx(x0,y0){
     G.walls.segs.forEach((sg,i)=>{
       if(sg.hp<=0)return;
       const a0=i/n*6.283,a1=(i+1)/n*6.283,k=Math.max(.25,sg.hp/sg.max);
-      ctx.beginPath();ctx.arc(x0,y0,G.walls.R,a0+.03,a1-.03);ctx.lineWidth=9;ctx.strokeStyle='rgba(232,225,200,'+k+')';ctx.stroke();
+      const WR=G.walls.R,am=(a0+a1)/2;
+      ctx.beginPath();ctx.arc(x0,y0,WR,a0+.02,a1-.02);ctx.lineWidth=13;ctx.strokeStyle='rgba(70,56,30,'+Math.min(1,k+.2)+')';ctx.stroke();
+      ctx.beginPath();ctx.arc(x0,y0,WR,a0+.03,a1-.03);ctx.lineWidth=9;ctx.strokeStyle='rgba(238,232,208,'+k+')';ctx.stroke();
+      ctx.fillStyle='rgba(240,235,214,'+k+')';ctx.beginPath();ctx.moveTo(x0+Math.cos(am-.05)*(WR+4),y0+Math.sin(am-.05)*(WR+4));ctx.lineTo(x0+Math.cos(am)*(WR+16),y0+Math.sin(am)*(WR+16));ctx.lineTo(x0+Math.cos(am+.05)*(WR+4),y0+Math.sin(am+.05)*(WR+4));ctx.fill();
     });
     ctx.lineWidth=1;
   }
