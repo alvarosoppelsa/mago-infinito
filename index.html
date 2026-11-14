@@ -228,6 +228,7 @@ const EN=[
  {n:'Hechicero oscuro',e:'🔮',armor:'Tela encantada',hp:30,sp:42,dmg:8,xp:9,gold:5,r:13,from:90,res:{dark:.3,magic:.8,divine:1.5,phys:1.2,elec:1.3},ranged:{range:280,cd:2.8,spd:240,col:'#b684ff'}},
  {n:'Francotirador',e:'🎯',armor:'Cuero',hp:22,sp:38,dmg:14,xp:12,gold:6,r:12,from:160,res:{phys:1.1,poison:1.3,fire:1.1},ranged:{range:340,cd:3.4,spd:420,col:'#ff7a7a'}}
 ];
+const ECOL={'Esqueleto':'#cfd3da','Slime':'#6be06b','Goblin':'#9ccf4a','Zombi':'#86b36a','Espectro':'#9fb8ff','Gólem':'#b89c78','Elemental de fuego':'#ff7a3d','Elemental de hielo':'#7fd6ff','Demonio':'#ff4a4a','Autómata':'#9aa5b5','Arquero esqueleto':'#e6d28a','Hechicero oscuro':'#b684ff','Francotirador':'#ff7a7a'};
 const ITEMS=[
  {id:'staff',n:'🪄 Bastón rúnico',max:20,cost:n=>Math.round(45*Math.pow(1.25,n)),ds:'+12% daño de todo'},
  {id:'ring',n:'💍 Anillo de prisa',max:20,cost:n=>Math.round(50*Math.pow(1.25,n)),ds:'+5% velocidad de ataque'},
@@ -243,7 +244,9 @@ const DMG_K=2.2;
 /* Tiempo efectivo de dificultad: al empezar los enemigos ya son como los del minuto 2 y se funde con la curva normal hacia el minuto 7 */
 const eT=t=>t+120*Math.max(0,1-t/420);
 const HPK=.26;   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
-const spawnRate=t=>{const m=eT(t)/60;return Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))};
+/* A partir del minuto 6 salen menos enemigos pero cada uno es más fuerte (misma dificultad total, menos carga para el equipo) */
+const cntF=t=>{const m=eT(t)/60;return m<=6?1:Math.max(.4,1-.6*(m-6)/10)};
+const spawnRate=t=>{const m=eT(t)/60;return Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))*cntF(t)};
 const hpScale=t=>{const m=eT(t)/60;return m<2?1+.35*m:m<5?1.7+.5*(m-2):3.2*Math.exp(HPK*(m-5))};
 const XPK=1.5,GOLDK=.6;   /* más experiencia y menos oro por enemigo */
 const foeDmg=t=>{const m=eT(t)/60;return .6*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
@@ -398,7 +401,7 @@ function spawnEnemy(boss){
   const d=pool[Math.floor(Math.random()*pool.length)];
   const a=Math.random()*Math.PI*2,R=Math.max(420,Math.hypot(W,H)/2/Z+30);
   const hpM=hpScale(G.t);
-  const e={d,n:(boss?'Jefe: ':'')+d.n,e:d.e,armor:d.armor,res:d.res,
+  const e={d,n:(boss?'Jefe: ':'')+d.n,e:d.e,armor:d.armor,res:d.res,col:ECOL[d.n]||'#ffffff',
     x:cx()+Math.cos(a)*R,y:cy()+Math.sin(a)*R,
     hp:d.hp*hpM*(boss?6:1),r:d.r*(boss?1.8:1),
     sp:d.sp*(1+Math.min(.8,eT(G.t)/600)),dmg:d.dmg*foeDmg(G.t)*(boss?.9:1),
@@ -410,6 +413,7 @@ function spawnEnemy(boss){
     else if(Math.random()<.65)rng={range:300,cd:3,spd:250,col:'#ff5a5a',burst:3};
   }
   e.rng=rng;e.shotCd=rng?rng.cd*Math.random():0;
+  {const k=1/cntF(G.t);e.hp*=k;e.dmg*=Math.sqrt(k);e.xp*=k;e.gold*=k;e.r*=Math.min(1.5,Math.pow(k,.2))}
   e.max=e.hp;G.enemies.push(e);
 }
 function kill(e){
@@ -418,7 +422,7 @@ function kill(e){
   gainXp(e.xp*XPK*(1+G.t/100)*S.xpM);
   if(G.dragon)dragonXp(e.xp*XPK*(1+G.t/100)*.7);
   heroOnKill(e);
-  for(let i=0;i<5;i++)G.fx.push({k:'p',x:e.x,y:e.y,vx:(Math.random()-.5)*160,vy:(Math.random()-.5)*160,t:.5,c:'#ffffffaa'});
+  if(G.fx.length<400)for(let i=0;i<5;i++)G.fx.push({k:'p',x:e.x,y:e.y,vx:(Math.random()-.5)*160,vy:(Math.random()-.5)*160,t:.5,c:'#ffffffaa'});
   if(e.boss)txt(e.x,e.y-30,'¡Jefe derrotado!','#ffd24a',20);
 }
 function need(){return Math.round(20*Math.pow(1.22,G.lvl-1))}
@@ -1140,7 +1144,7 @@ function updateAllies(dt){
 }
 function taunter(e){
   let best=null,bd=1e12;
-  const list=G.dragon?[G.dragon,...G.sdrags]:G.sdrags;
+  const list=G._tl||G.sdrags;
   for(const u of list){
     if(u.hp<=0)continue;
     const dd=Math.hypot(u.x-e.x,u.y-e.y);
@@ -1166,10 +1170,10 @@ function shot(t,dmg,b,h){
   let p;
   if(pl&&Math.random()<.08+.008*pl){
     const a=Math.atan2(t.y-cy(),t.x-cx()),dm=d*.6,ex=dm*mult(t,b.type);
-    p={kind:'orb',x:cx(),y:cy()-8,vx:Math.cos(a)*720,vy:Math.sin(a)*720,size:6,life:1.1,type:b.type,dmg:dm,tgt:t,exp:ex,hit:new Set(),src:'Flecha perforante',col:b.col};
+    p={kind:'orb',x:cx(),y:cy()-8,vx:Math.cos(a)*720,vy:Math.sin(a)*720,size:6,life:1.1,type:b.type,dmg:dm,tgt:t,exp:ex,hit:new Set(),src:'Flecha perforante',col:b.col,arrow:true};
   }else{
     const ex=d*mult(t,b.type);
-    p={kind:'home',x:cx(),y:cy()-10,spd:b.spd,size:4,type:b.type,dmg:d,tgt:t,exp:ex,life:8,src:b.n,col:b.col};
+    p={kind:'home',x:cx(),y:cy()-10,spd:b.spd,size:4,type:b.type,dmg:d,tgt:t,exp:ex,life:8,src:b.n,col:b.col,arrow:h==='archer'};
     const po=h==='archer'?clv('a_poison'):0;
     if(po&&Math.random()<.25+.02*po){p.pdps=hdmg(po)*.35;p.col='#82e04e'}
   }
@@ -1457,7 +1461,7 @@ function update(dt){
   // spawns
   const rate=spawnRate(G.t);
   G.spawnAcc+=rate*dt;
-  while(G.spawnAcc>=1){G.spawnAcc--;if(G.enemies.length<350)spawnEnemy(false)}
+  while(G.spawnAcc>=1){G.spawnAcc--;if(G.enemies.length<160)spawnEnemy(false)}
   if(G.t>=G.nextBoss){G.nextBoss+=90;spawnEnemy(true);txt(cx(),cy()-80,'¡Llega un jefe!','#ff5a5a',22)}
   if(G.basicCd-dt<=0)fireBasic();else G.basicCd-=dt;
   // habilidades
@@ -1478,7 +1482,7 @@ function update(dt){
   updateSpecials(dt);
   updateZones(dt);
   // enemigos
-  const mx=cx(),my=cy();let tn=null;
+  const mx=cx(),my=cy();let tn=null;G._tl=G.dragon?[G.dragon,...G.sdrags]:G.sdrags;
   for(const e of G.enemies){
     if(e.dead)continue;
     for(const t in e.dots){
@@ -1529,7 +1533,7 @@ function update(dt){
         if(!nb){p.dead=true;continue}
         p.tgt=nb;
       }
-      const dx=p.tgt.x-p.x,dy=p.tgt.y-p.y,dist=Math.hypot(dx,dy),step=p.spd*dt;
+      const dx=p.tgt.x-p.x,dy=p.tgt.y-p.y,dist=Math.hypot(dx,dy),step=p.spd*dt;p.ang=Math.atan2(dy,dx);
       if(dist<=step+p.tgt.r){hitEnemy(p,p.tgt);p.dead=true}
       else{p.x+=dx/dist*step;p.y+=dy/dist*step}
       p.life-=dt;if(p.life<=0)p.dead=true;
@@ -1545,6 +1549,18 @@ function update(dt){
   if(G.hp<=0)gameOver();
 }
 
+function drawArrow(p){
+  const a=p.kind==='orb'?Math.atan2(p.vy,p.vx):(p.ang||0),L=p.crit?30:22,pois=!!p.pdps;
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);
+  if(pois||p.crit||p.kind==='orb'){ctx.shadowColor=pois?'#82e04e':(p.crit?'#ff4040':'#ffffff');ctx.shadowBlur=8}
+  ctx.strokeStyle=pois?'#9be07b':'#d8c9a0';ctx.lineWidth=p.crit?3:2;
+  ctx.beginPath();ctx.moveTo(-L,0);ctx.lineTo(0,0);ctx.stroke();
+  ctx.fillStyle=pois?'#82e04e':'#f0f0f6';
+  ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-1,-3.6);ctx.lineTo(-1,3.6);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#cf5a4a';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(-L,0);ctx.lineTo(-L-5,-3.5);ctx.moveTo(-L+4,0);ctx.lineTo(-L-1,-3.5);ctx.moveTo(-L,0);ctx.lineTo(-L-5,3.5);ctx.moveTo(-L+4,0);ctx.lineTo(-L-1,3.5);ctx.stroke();
+  ctx.restore();
+}
 /* ============ DIBUJO DE PERSONAJES ============ */
 function drawHeroOn(c,x,y,h,t,aim,sc){
   c.save();c.translate(x,y);c.scale(sc,sc);
@@ -1674,14 +1690,27 @@ function draw(){
     ctx.fillStyle=z.fill||(z.kind==='hole'?'#000000aa':'#82e04e33');ctx.fill();
     ctx.strokeStyle=z.edge||(z.kind==='hole'?'#a050d0':'#82e04e');ctx.stroke();
     if(z.kind==='hole'){ctx.beginPath();ctx.arc(z.x,z.y,z.r*.35*(1+Math.sin(G.t*8)*.1),0,6.3);ctx.fillStyle='#000';ctx.fill()}
+    if(z.kind==='rain'){
+      ctx.strokeStyle='#e0d2a8';ctx.lineWidth=1.5;
+      for(let i=0;i<16;i++){const ph=(G.t*2.2+i*.37)%1,ax=z.x+Math.sin(i*12.9)*z.r*.88,ay=z.y-z.r+ph*z.r*2;ctx.beginPath();ctx.moveTo(ax-2,ay-14);ctx.lineTo(ax,ay);ctx.stroke()}
+      ctx.lineWidth=1;
+    }
   }
   for(const d of G.delayed){if(!d.mark)continue;
     ctx.beginPath();ctx.arc(d.mark.x,d.mark.y,d.mark.r*(1-d.t*.4),0,6.3);ctx.fillStyle='#ff7a3d22';ctx.fill();ctx.strokeStyle='#ff7a3d';ctx.stroke()}
   // enemigos
   for(const e of G.enemies){
+    const bob=Math.sin(G.t*9+e.x*.07+e.y*.05)*1.6,sq=1+Math.sin(G.t*9+e.x*.07)*.045;
+    ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(e.x,e.y+e.r*.9,e.r*.85,e.r*.3,0,0,6.3);ctx.fill();
+    ctx.beginPath();ctx.arc(e.x,e.y+bob,e.r*1.18,0,6.3);ctx.fillStyle=e.col+(e.boss?'55':'30');ctx.fill();
+    ctx.strokeStyle=e.col+(e.boss?'cc':'88');ctx.lineWidth=e.boss?2:1.2;ctx.stroke();ctx.lineWidth=1;
+    ctx.save();ctx.translate(e.x,e.y+bob);ctx.scale(1/sq,sq);
     ctx.font=(e.r*2)+'px "Segoe UI Emoji",serif';
     if(e.flash>0){ctx.globalAlpha=.55}
-    ctx.fillText(e.e,e.x,e.y);ctx.globalAlpha=1;
+    if(e.boss){ctx.shadowColor=e.col;ctx.shadowBlur=14}
+    ctx.fillText(e.e,0,0);
+    ctx.restore();ctx.globalAlpha=1;
+    if(e.boss){ctx.font=(e.r*1.1)+'px "Segoe UI Emoji",serif';ctx.fillText('👑',e.x,e.y-e.r*1.3+bob)}
     if(e.boss){ctx.beginPath();ctx.arc(e.x,e.y,e.r+3,0,6.3);ctx.strokeStyle='#ff4040';ctx.lineWidth=2;ctx.stroke();ctx.lineWidth=1}
     let ry=e.r+1;
     for(const t in e.dots){ctx.beginPath();ctx.arc(e.x,e.y,ry,0,6.3);ctx.strokeStyle=TYPES[t].c+'aa';ctx.stroke();ry+=2}
@@ -1701,6 +1730,7 @@ function draw(){
   drawAllies();
   // proyectiles
   for(const p of G.projs){
+    if(p.arrow){drawArrow(p);continue}
     const c=p.col||TYPES[p.type].c;
     if(p.giant)ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,6.3);ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;
     if(p.kind==='orb'){ctx.beginPath();ctx.arc(p.x,p.y,p.size*.5,0,6.3);ctx.fillStyle='#000';ctx.fill()}
