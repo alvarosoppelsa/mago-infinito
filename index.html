@@ -39,7 +39,7 @@ input[type=text]{background:#0f0e1c;border:1px solid #3a3566;color:#fff;font:inh
 table.rank{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
 table.rank td,table.rank th{padding:3px 6px;border-bottom:1px solid var(--line)}
 table.rank tr.me td{background:#2a2450;color:var(--gold)}
-.heroes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.heroes{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .hcard{background:#1a1832;border:2px solid #2f2b57;border-radius:12px;padding:6px;cursor:pointer;transition:transform .12s,border-color .12s}
 .hcard:hover{transform:translateY(-3px)}
 .hcard.on{border-color:var(--gold);box-shadow:0 0 16px #ffd24a44}
@@ -293,7 +293,8 @@ const HEROES={
  necro:{n:'Nigromante',icon:'💀',hp:95,col:'#9be07b',desc:'Ejército de no-muertos: esqueletos, vampiros, momias, muro de huesos y dragón esqueleto.',basic:{n:'Proyectil de hueso',type:'dark',cd:1,spd:430,m:1.9,col:'#b8f08a'}},
  dwarf:{n:'Enano artillero',icon:'🔫',hp:140,col:'#ffb35a',desc:'Fusil, granadas, minas y torreta. Muy resistente.',basic:{n:'Disparo de fusil',type:'phys',cd:1.2,spd:900,m:2.8,col:'#ffd27a'}}
  ,
- barbarian:{n:'Bárbaro',icon:'🪓',hp:135,col:'#d9503a',desc:'Lanza hachas giratorias que van y vuelven atravesando a los enemigos. La furia lo hace más fuerte al estar herido.',basic:{n:'Hacha giratoria',type:'phys',cd:1.0,spd:560,m:1.5,col:'#cfd3da'}}
+ barbarian:{n:'Bárbaro',icon:'🪓',hp:135,col:'#d9503a',desc:'Lanza hachas giratorias que van y vuelven atravesando a los enemigos. La furia lo hace más fuerte al estar herido.',basic:{n:'Hacha giratoria',type:'phys',cd:1.0,spd:560,m:1.5,col:'#cfd3da'}},
+ demon:{n:'Cazador demonio',icon:'😈',hp:110,col:'#7dff6a',desc:'Inspirado en los cazadores de demonios: dos guadañas de energía vil, metamorfosis, rayos oculares, aura de fuego y evasión.',basic:{n:'Guadañas viles',type:'magic',cd:.85,spd:650,m:1.1,col:'#7dff6a'}}
 };
 const CLSMAX=20;
 const clv=id=>(G&&G.cls&&G.cls[id])||0;
@@ -351,6 +352,16 @@ const CLS={
   {id:'b_rage',n:'Furia',icon:'😡',desc:'Cada enemigo que matas te da furia: más daño y más velocidad durante unos segundos. Con poca vida, aún más.',eff:l=>'+'+f1(2+.2*l)+'% por baja (hasta '+(15+l)+' bajas, 4 s) · +'+Math.round(30+2*l)+'% con poca vida'},
   {id:'b_whirl',n:'Torbellino de hachas',icon:'🌀',desc:'Unas hachas giran a tu alrededor un rato y trituran a quien se acerque.',eff:l=>'Radio '+Math.round(110+3*l)+' · '+f1(5+.15*l)+' s · cada '+f1(Math.max(7,13-.35*l))+' s · daño alto'},
   {id:'b_shout',n:'Grito de guerra',icon:'📢',desc:'Aturde y empuja a los enemigos cercanos y te da más velocidad de ataque unos segundos.',eff:l=>'Radio '+(150+3*l)+' · aturde '+f1(1.2+.05*l)+' s · cada '+f1(Math.max(10,20-.4*l))+' s · +50% velocidad'}
+ ],
+ demon:[
+  {id:'z_meta',n:'Metamorfosis',icon:'😈',desc:'Te transformas en un demonio alado: lanzas 3 guadañas, atacas más rápido, pegas más fuerte y te regeneras.',eff:l=>f1(8+.3*l)+' s · +'+Math.round(30+2*l)+'% daño · +40% velocidad · cada '+f1(Math.max(16,30-.6*l))+' s'},
+  {id:'z_immo',n:'Aura de inmolación',icon:'🔥',desc:'Un aura de fuego vil te rodea y quema a los enemigos que se acercan.',eff:l=>'Radio '+Math.round(85+2.5*l)+' · golpea cada 0,5 s'},
+  {id:'z_eyes',n:'Rayos oculares',icon:'👁️',desc:'Tus ojos disparan rayos de energía que atraviesan a todos los enemigos en línea.',eff:l=>Math.min(5,1+Math.floor(l/5))+' rayo(s) · cada '+f1(Math.max(5,10-.25*l))+' s'},
+  {id:'z_evade',n:'Evasión',icon:'💨',desc:'Posibilidad de esquivar el daño que recibes.',eff:l=>Math.round(100*Math.min(.3,.05+.013*l))+'% de esquiva'},
+  {id:'z_burn',n:'Quemadura vil',icon:'☄️',desc:'Tus guadañas queman a los enemigos con energía vil (daño en el tiempo que se acumula).',eff:l=>Math.round(100*(.25+.02*l))+'% del golpe por segundo durante 4 s'},
+  {id:'z_shadow',n:'Golpe de sombras',icon:'🗡️',desc:'Golpea con sombras a los enemigos más duros del mapa y los ralentiza.',eff:l=>(2+Math.floor(l/4))+' objetivos · cada '+f1(Math.max(6,11-.3*l))+' s'},
+  {id:'z_hunt',n:'Cazador de demonios',icon:'🎯',desc:'Más daño contra jefes y enemigos que disparan, y recuperas vida con cada baja.',eff:l=>'+'+(3*l)+'% de daño a jefes y tiradores · cura '+f1(.4+.04*l)+'% de vida por baja'},
+  {id:'z_chaos',n:'Caos vil',icon:'👿',desc:'Una explosión de caos hiere a todos los enemigos a tu alcance y los hace huir unos segundos.',eff:l=>'Daño alto · huyen '+f1(2+.06*l)+' s · cada '+f1(Math.max(18,32-.7*l))+' s'}
  ]
 };
 const clsCost=id=>Math.round(90*Math.pow(1.3,clv(id)));
@@ -402,7 +413,7 @@ function recalc(){
   S.xpM=1+.07*it.hat;
   S.goldM=1+.07*it.purse;
   S.def=(1-.025*it.shield)*(1-.012*clv('d_armor'));
-  S.dodge=clv('a_dodge')?Math.min(.25,.03+.011*clv('a_dodge')):0;
+  S.dodge=Math.max(clv('a_dodge')?Math.min(.25,.03+.011*clv('a_dodge')):0,clv('z_evade')?Math.min(.3,.05+.013*clv('z_evade')):0);
 }
 const cx=()=>W/2, cy=()=>H/2;
 const mult=(e,t)=>e.res[t]??1;
@@ -453,7 +464,7 @@ function gainXp(a){
 /* ============ DAÑO ============ */
 function txt(x,y,s,c,size){if(LOWQ&&(size||13)<16)return;if(G.texts.length>(LOWQ?25:70))G.texts.shift();G.texts.push({x,y,s,c,size:size||13,t:.9})}
 function dealDamage(e,amount,type){
-  const m=mult(e,type),d=amount*m*(e.vt>G.t?e.vm:1);G.dmgBy[SRC]=(G.dmgBy[SRC]||0)+Math.min(d,Math.max(0,e.hp));e.hp-=d;e.flash=.08;
+  const m=mult(e,type),d=amount*m*(e.vt>G.t?e.vm:1)*((G.hero==='demon'&&(e.boss||e.rng))?1+.03*clv('z_hunt'):1);G.dmgBy[SRC]=(G.dmgBy[SRC]||0)+Math.min(d,Math.max(0,e.hp));e.hp-=d;e.flash=.08;
   if(m===0)txt(e.x,e.y-e.r,'Inmune','#888',11);
   else txt(e.x+(Math.random()-.5)*14,e.y-e.r,Math.round(d)+(m>=1.4?'!':m<=.7?'~':''),TYPES[type].c,m>=1.4?16:m<=.7?11:13);
   if(e.hp<=0)kill(e);
@@ -479,6 +490,7 @@ function hitEnemy(p,e){
   if(p.burn)addDot(e,'fire',p.dmg*.35,3,false);
   if(p.pdps)addDot(e,'poison',p.pdps,5,true);
   if(p.bleed)addDot(e,'phys',p.bleed,4,true);
+  if(p.zb)addDot(e,'magic',p.dmg*(.25+.02*p.zb),4,true);
   if(p.slow&&mult(e,p.type)>0)e.slow={a:p.slow,t:2.5};
   if(p.splash){
     for(const o of G.enemies){if(o===e||o.dead)continue;
@@ -1177,6 +1189,17 @@ function wallHit(e,dist,dt){
 }
 
 /* ============ ATAQUE BÁSICO Y HABILIDADES DE HÉROE ============ */
+function shotGlaive(t,dmg,b){
+  const meta=G.ht&&G.ht.metaOn>0,l=clv('z_meta');
+  const d=dmg*(meta?1.3+.02*l:1),n=meta?3:2,a0=Math.atan2(t.y-cy(),t.x-cx());
+  for(let k=0;k<n;k++){
+    const a=a0+(k-(n-1)/2)*.07;
+    const p={kind:'orb',glaive:true,x:cx(),y:cy()-6,vx:Math.cos(a)*b.spd,vy:Math.sin(a)*b.spd,size:9,life:.95,type:b.type,dmg:d,tgt:t,exp:k===0?d*mult(t,b.type):0,hit:new Set(),src:b.n,col:b.col};
+    const zb=clv('z_burn');if(zb)p.zb=zb;
+    G.projs.push(p);
+  }
+  t.pending+=d*mult(t,b.type);
+}
 const rageMul=()=>{const l=clv('b_rage');if(!l)return 1;return 1+(G.rage||0)*(.02+.002*l)+(1-Math.max(0,G.hp)/S.maxHp)*(.3+.02*l)};
 function shotAxe(t,dmg,b){
   let d=dmg*rageMul(),crit=false;
@@ -1207,6 +1230,7 @@ function updateBoom(p,dt){
 }
 function shot(t,dmg,b,h){
   if(h==='barbarian')return shotAxe(t,dmg,b);
+  if(h==='demon')return shotGlaive(t,dmg,b);
   let d=dmg,crit=false;
   const cl=h==='archer'?clv('a_crit'):h==='dwarf'?clv('d_crit'):0;
   if(cl&&Math.random()<Math.min(.6,.10+.025*cl)){d*=2+.12*cl;crit=true}
@@ -1234,6 +1258,7 @@ function fireBasic(){
   if(h==='archer'){rate/=1+.03*clv('a_aspd');n=Math.min(4,1+Math.floor(clv('a_multi')/5))}
   if(h==='dwarf'){rate/=1+.04*clv('d_aspd');burst=Math.min(5,1+Math.floor(clv('d_multi')/4))}
   if(h==='barbarian'){rate/=(1+.05*clv('b_aspd'))*rageMul();n=Math.min(6,1+Math.floor(clv('b_multi')/3))}
+  if(h==='demon'&&G.ht.metaOn>0)rate/=1.4;
   let tg=pick(n,b.type,dmg,1e5);
   /* nunca quedarse sin objetivo: prioriza a quien ya te golpea y, si no hay candidatos, dispara al más cercano */
   let close=null,cd0=1e12;
@@ -1253,6 +1278,7 @@ function fireBasic(){
   G.basicCd=rate/(S.atk*(G.haste>0?1.5:1));
 }
 function heroOnKill(e){
+  if(G.hero==='demon'&&clv('z_hunt'))G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.004+.0004*clv('z_hunt')));
   if(G.hero==='barbarian'&&clv('b_rage')){G.rage=Math.min(15+clv('b_rage'),(G.rage||0)+1);G.rageT=4}
   if(G.hero!=='necro'||G.inCorpse)return;
   const r=clv('n_raise');
@@ -1494,6 +1520,59 @@ function updateHero(dt){
         done('b_shout',Math.max(10,20-.4*l));
       }
     }
+  } else if(h==='demon'){
+    if((l=clv('z_meta'))){
+      if(T.metaOn>0){T.metaOn-=dt;G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.012*dt)}
+      else if(rdy('z_meta')){
+        if(countNear(x0,y0,range)<3)retry('z_meta');
+        else{T.metaOn=8+.3*l;done('z_meta',Math.max(16,30-.6*l));G.fx.push({k:'ring',x:x0,y:y0,r:110,t:.4,c:'#7dff6a'});txt(x0,y0-70,'😈 ¡METAMORFOSIS!','#7dff6a',18)}
+      }
+    }
+    const meta=T.metaOn>0;
+    if((l=clv('z_immo'))){
+      T.immoTk=(T.immoTk??0)-dt;
+      if(T.immoTk<=0){
+        T.immoTk=.5;SRC='Aura de inmolación';
+        const R=85+2.5*l,d=hdmg(l)*.55*(meta?1.5:1);
+        for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r&&mult(e,'fire')>0)dealDamage(e,d,'fire')}
+      }
+    }
+    if((l=clv('z_eyes'))&&rdy('z_eyes')){
+      const n=Math.min(5,1+Math.floor(l/5)),d=hdmg(l)*2.2*(meta?1.5:1),tg=pick(n,'magic',d,range);
+      if(!tg.length)retry('z_eyes');
+      else{
+        SRC='Rayos oculares';
+        for(const t of tg){
+          const dx=t.x-x0,dy=t.y-y0,dl=Math.hypot(dx,dy)||1,ux=dx/dl,uy=dy/dl,len=Math.max(dl+120,420),ex=x0+ux*len,ey=y0+uy*len;
+          for(const e of G.enemies){
+            if(e.dead)continue;
+            const px=e.x-x0,py=e.y-y0,tt=Math.max(0,Math.min(len,px*ux+py*uy)),qx=ux*tt-px,qy=uy*tt-py;
+            if(qx*qx+qy*qy<=(22+e.r)**2)dealDamage(e,d,'magic');
+          }
+          G.fx.push({k:'bolt',pts:[[x0,y0-8],[ex,ey]],t:.3,c:'#7dff6a'});
+        }
+        done('z_eyes',Math.max(5,10-.25*l));
+      }
+    }
+    if((l=clv('z_shadow'))&&rdy('z_shadow')){
+      const cs=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=range).sort((a,b)=>b.hp-a.hp).slice(0,2+Math.floor(l/4));
+      if(!cs.length)retry('z_shadow');
+      else{
+        SRC='Golpe de sombras';const d=hdmg(l)*3*(meta?1.5:1);
+        for(const e of cs){dealDamage(e,d,'magic');if(!e.dead)e.slow={a:.4,t:3};G.fx.push({k:'bolt',pts:[[x0,y0-8],[e.x,e.y]],t:.25,c:'#a050d0'});G.fx.push({k:'ring',x:e.x,y:e.y,r:40,t:.3,c:'#a050d0'})}
+        done('z_shadow',Math.max(6,11-.3*l));
+      }
+    }
+    if((l=clv('z_chaos'))&&rdy('z_chaos')){
+      if(countNear(x0,y0,range)<4)retry('z_chaos');
+      else{
+        SRC='Caos vil';const d=hdmg(l)*2.2*(meta?1.5:1);
+        for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>range)continue;dealDamage(e,d,'magic');if(!e.dead)e.rep=2+.06*l}
+        G.fx.push({k:'ring',x:x0,y:y0,r:range,t:.4,c:'#7dff6a'});G.fx.push({k:'ring',x:x0,y:y0,r:range*.6,t:.4,c:'#a050d0'});
+        txt(x0,y0-70,'👿 ¡CAOS VIL!','#7dff6a',18);
+        done('z_chaos',Math.max(18,32-.7*l));
+      }
+    }
   }
 }
 
@@ -1644,6 +1723,14 @@ function update(dt){
   if(G.hp<=0)gameOver();
 }
 
+function drawGlaive(p){
+  const a=Math.atan2(p.vy,p.vx);
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);
+  ctx.fillStyle='rgba(125,255,106,.28)';ctx.beginPath();ctx.arc(0,0,17,-1.3,1.3);ctx.arc(-6,0,13,1.1,-1.1,true);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#c8ffb8';ctx.beginPath();ctx.arc(0,0,13,-1.2,1.2);ctx.arc(-5,0,9.5,1.0,-1.0,true);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#3fae33';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.restore();
+}
 function drawAxe(p){
   ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot||0);const sc=(p.size||11)/11*1.55;ctx.scale(sc,sc);
   ctx.strokeStyle='#7a5a2b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(12,0);ctx.stroke();
@@ -1712,6 +1799,24 @@ function drawHeroOn(c,x,y,h,t,aim,sc){
     fl('#e8ecde',()=>c.arc(17,-19,5.5,0,6.3));
     c.fillStyle='#17261d';c.fillRect(14.5,-21,2,2.5);c.fillRect(18,-21,2,2.5);
     for(let i=0;i<3;i++){const a=t*1.8+i*2.1;c.fillStyle='#7be07b99';c.beginPath();c.arc(Math.cos(a)*24,8+Math.sin(a)*6-Math.abs(Math.sin(a*1.3))*8,2,0,6.3);c.fill()}
+  }else if(h==='demon'){
+    const meta=(typeof G!=='undefined'&&G&&G.ht&&G.ht.metaOn>0);
+    if(meta){const g=c.createRadialGradient(0,0,6,0,0,44);g.addColorStop(0,'#7dff6a55');g.addColorStop(1,'#7dff6a00');fl(g,()=>c.arc(0,0,44,0,6.3))}
+    c.fillStyle=meta?'#6a1aa0':'#3a2760';
+    for(const sd of [-1,1]){c.beginPath();c.moveTo(sd*6,-4);c.lineTo(sd*(meta?42:30),-(meta?28:18));c.lineTo(sd*(meta?36:26),meta?2:-2);c.lineTo(sd*(meta?32:22),12);c.lineTo(sd*8,8);c.closePath();c.fill()}
+    fl(meta?'#4a1a7a':'#5a3a8a',()=>{c.rect(-9,-6,18,22)});
+    fl('#2a2040',()=>{c.rect(-10,10,20,10)});
+    fl(meta?'#5a2a8a':'#6b4a9a',()=>c.arc(0,-13,7,0,6.3));
+    fl('#d8d0b8',()=>{c.moveTo(-5,-18);c.lineTo(-11,-31);c.lineTo(-2,-19)});
+    fl('#d8d0b8',()=>{c.moveTo(5,-18);c.lineTo(11,-31);c.lineTo(2,-19)});
+    c.fillStyle='#1a1428';c.fillRect(-7,-16,14,5);
+    c.shadowColor='#7dff6a';c.shadowBlur=6;c.fillStyle='#7dff6a';c.fillRect(-4,-14.5,2.5,2);c.fillRect(1.5,-14.5,2.5,2);c.shadowBlur=0;
+    c.save();c.translate(0,2);c.rotate(aim);
+    for(const sy of [-1,1]){
+      c.strokeStyle='#5a4a3a';c.lineWidth=2;c.beginPath();c.moveTo(0,sy*6);c.lineTo(14,sy*8);c.stroke();
+      c.fillStyle='#7dff6a';c.beginPath();c.moveTo(14,sy*8);c.quadraticCurveTo(28,sy*18,18,sy*22);c.quadraticCurveTo(21,sy*13,14,sy*8);c.fill();
+    }
+    c.restore();
   }else if(h==='barbarian'){
     fl('#6b4a2a',()=>{c.moveTo(-15,-8);c.lineTo(15,-8);c.lineTo(17,0);c.lineTo(-17,0);c.closePath()});
     fl('#d9a075',()=>{c.rect(-12,-6,24,22)});
@@ -1760,6 +1865,10 @@ function drawAllies(){
 }
 function drawClassFx(x0,y0){
   const h=G.hero;
+  if(h==='demon'&&clv('z_immo')){
+    const R=85+2.5*clv('z_immo');
+    ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='rgba(125,255,106,'+(.07+.03*Math.sin(G.t*5))+')';ctx.fill();ctx.strokeStyle='rgba(125,255,106,.55)';ctx.lineWidth=1.5;ctx.stroke();ctx.lineWidth=1;
+  }
   if(h==='barbarian'&&(G.rage||0)>2){ctx.beginPath();ctx.arc(x0,y0,36+Math.min(12,G.rage),0,6.3);ctx.fillStyle='rgba(224,60,40,'+Math.min(.28,G.rage*.02)+')';ctx.fill()}
   if(h==='barbarian'&&G.ht&&G.ht.whirlOn>0){
     const R=110+3*clv('b_whirl');
@@ -1929,6 +2038,7 @@ function draw(){
   for(const p of G.projs){
     if(p.arrow){drawArrow(p);continue}
     if(p.axe){drawAxe(p);continue}
+    if(p.glaive){drawGlaive(p);continue}
     const c=p.col||TYPES[p.type].c;
     const ga=p.giant?.6:1;ctx.fillStyle=c;ctx.globalAlpha=ga*.3;ctx.beginPath();ctx.arc(p.x,p.y,p.size*1.7,0,6.3);ctx.fill();ctx.globalAlpha=ga;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,6.3);ctx.fill();ctx.globalAlpha=1;
     if(p.kind==='orb'){ctx.beginPath();ctx.arc(p.x,p.y,p.size*.5,0,6.3);ctx.fillStyle='#000';ctx.fill()}
@@ -2320,7 +2430,7 @@ function showStart(){
   const o=$('#overlay');o.style.display='flex';
   let nick='';try{nick=localStorage.getItem('mago_nick')||'';selHero=localStorage.getItem('mago_hero')||selHero}catch(e){}
   if(!HEROES[selHero])selHero='mage';
-  o.innerHTML='<div class="card" style="max-width:860px;text-align:center"><h1>🧙 Mago Infinito</h1><p>Elige tu héroe y sobrevive el mayor tiempo posible.</p><div class="heroes" id="heroes"></div>'+
+  o.innerHTML='<div class="card" style="max-width:980px;text-align:center"><h1>🧙 Mago Infinito</h1><p>Elige tu héroe y sobrevive el mayor tiempo posible.</p><div class="heroes" id="heroes"></div>'+
     '<div id="heroDesc" class="sub" style="min-height:34px;margin:8px 0"></div>'+
     '<div style="margin:6px 0"><input type="text" id="nick" maxlength="16" placeholder="Tu apodo" value="'+esc(nick)+'"> <span title="Detectada por tu navegador">'+flagEmoji(FLAG)+' '+esc(FLAG||'')+'</span></div>'+
     '<button class="btn" id="play">Jugar</button> <button class="btn alt" id="rk">🏆 Ranking</button></div>';
