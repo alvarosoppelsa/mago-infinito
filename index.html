@@ -8,8 +8,8 @@
 :root{--bg:#0b0b14;--p1:#15132b;--p2:#0f0e1d;--line:#2b2850;--acc:#8f7cff;--gold:#ffd24a;--txt:#e8e6f0;--mut:#a9a5c4}
 *{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#3a3566 transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Segoe UI,system-ui,sans-serif;overflow:hidden}
-body{display:grid;grid-template-columns:280px minmax(0,1fr) 300px;grid-template-rows:minmax(0,1fr) 250px}
-#game{grid-column:2;grid-row:1/3;position:relative;min-width:0;min-height:0}
+body{display:grid;grid-template-columns:260px minmax(0,1fr) 280px;grid-template-rows:minmax(0,1fr)}
+#game{grid-column:2;grid-row:1;position:relative;min-width:0;min-height:0}
 canvas{display:block;touch-action:none}
 #tbar{display:none}
 .panel{background:linear-gradient(180deg,var(--p1),var(--p2));padding:12px;overflow-y:auto;min-height:0}
@@ -56,7 +56,8 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 .srow.sel{border-color:var(--acc);background:#1f1c40}
 .srow.dim .nm{opacity:.55}
 .srow .nm{flex:1}
-.srow .nm small{display:block;color:var(--mut);font-size:10px}
+.srow .nm small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--mut);font-size:10px;line-height:1.3}
+.plus.buy{min-width:70px;height:30px;font-size:12px;padding:0 8px}
 .srow .lv{color:var(--mut);font-size:11px;min-width:34px;text-align:right}
 .plus{min-width:24px;height:24px;border:0;border-radius:6px;background:#2c6b3c;color:#fff;font-weight:700;cursor:pointer;font-size:11px;padding:0 5px}
 .plus.gold{background:#7a5a10}
@@ -147,21 +148,20 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   .panel p{font-size:13px}.kv{font-size:13px}
   .panel{max-height:68vh}
 }
+@media (pointer:coarse){.plus.buy{min-width:88px;height:42px;font-size:14px}}
 </style>
 </head>
 <body>
 <div class="panel" id="left">
-  <div class="pts" id="ptsbox">★ Puntos de habilidad: <b id="pts">0</b></div>
-  <div id="infoInline"></div>
+  <div class="pts" id="ptsbox">★ Puntos: <b id="pts">0</b></div>
   <h2>Héroe</h2>
-  <div id="heroName" class="sub" style="margin-bottom:6px"></div>
+  <div id="heroName" class="sub" style="margin-bottom:4px"></div>
   <div id="heroSk"></div>
-  <h2 style="margin-top:14px">Habilidades globales</h2>
+  <h2 style="margin-top:12px">Habilidades</h2>
   <div id="skills"></div>
   <div id="powers" style="display:none"></div>
-  <div class="hint">Cada nivel da 1 punto (experiencia). <b>Todas</b> las mejoras se pueden comprar con un punto (<b>+</b>) o con oro (<b>💰</b>). El juego no se detiene.<br><b>1-9, 0</b> suben con punto las 10 primeras globales · <b>P</b> pausa · <b>F</b> velocidad x1/x2/x3 · <b>Rueda</b> o <b>+ / -</b> zoom<br>Pasa el ratón sobre un enemigo para ver su armadura y resistencias.</div>
+  <div class="hint">Cada nivel da 1 punto. El botón de cada habilidad gasta un punto y, si no hay, oro.<br><b>P</b> pausa · <b>F</b> velocidad · <b>Rueda</b> o <b>+ / -</b> zoom</div>
 </div>
-<div class="panel" id="info"></div>
 <div id="game">
   <canvas id="c"></canvas>
   <div id="bar"></div>
@@ -177,11 +177,9 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   <div id="drPts" class="sub" style="margin-bottom:6px"></div>
   <div id="drSk"></div>
 </div>
-<div class="panel" id="inv"><h2>Inventario</h2><div id="invTab"></div></div>
 <div id="tbar">
   <button data-d="left">⚔️<span>Habilidades</span><i class="bdg" id="bdgSk"></i></button>
   <button data-d="shopc">🛒<span>Tienda y dragón</span><i class="bdg" id="bdgSh"></i></button>
-  <button data-d="inv">🎒<span>Inventario</span></button>
 </div>
 <script>
 "use strict";
@@ -287,10 +285,10 @@ const spCdF=lv=>Math.max(.5,1-.025*(lv-1));  /* factor de enfriamiento */
 
 /* ============ HÉROES ============ */
 const HEROES={
- mage:{n:'Mago',icon:'🧙',hp:100,col:'#8f7cff',desc:'Maestro de la magia: misiles, campo eléctrico, golems y supernova.',basic:{n:'Disparo arcano',type:'magic',cd:.9,spd:480,m:1,col:'#b684ff'}},
- archer:{n:'Arquero elfo',icon:'🏹',hp:90,col:'#7be07b',desc:'Daño preciso a distancia: críticos, flechas múltiples, veneno y esquiva.',basic:{n:'Flecha',type:'phys',cd:.8,spd:720,m:1.05,col:'#e6d28a'}},
- necro:{n:'Nigromante',icon:'💀',hp:95,col:'#9be07b',desc:'Ejército de no-muertos: esqueletos, vampiros, momias, muro de huesos y dragón esqueleto.',basic:{n:'Proyectil de hueso',type:'dark',cd:1,spd:430,m:1.2,col:'#b8f08a'}},
- dwarf:{n:'Enano artillero',icon:'🔫',hp:140,col:'#ffb35a',desc:'Fusil, granadas, minas y torreta. Muy resistente.',basic:{n:'Disparo de fusil',type:'phys',cd:1.2,spd:900,m:1.9,col:'#ffd27a'}}
+ mage:{n:'Mago',icon:'🧙',hp:100,col:'#8f7cff',desc:'Maestro de la magia: misiles, campo eléctrico, golems y supernova.',basic:{n:'Disparo arcano',type:'magic',cd:.9,spd:480,m:1.15,col:'#b684ff'}},
+ archer:{n:'Arquero elfo',icon:'🏹',hp:90,col:'#7be07b',desc:'Daño preciso a distancia: críticos, flechas múltiples, veneno y esquiva.',basic:{n:'Flecha',type:'phys',cd:.8,spd:720,m:1.75,col:'#e6d28a'}},
+ necro:{n:'Nigromante',icon:'💀',hp:95,col:'#9be07b',desc:'Ejército de no-muertos: esqueletos, vampiros, momias, muro de huesos y dragón esqueleto.',basic:{n:'Proyectil de hueso',type:'dark',cd:1,spd:430,m:1.9,col:'#b8f08a'}},
+ dwarf:{n:'Enano artillero',icon:'🔫',hp:140,col:'#ffb35a',desc:'Fusil, granadas, minas y torreta. Muy resistente.',basic:{n:'Disparo de fusil',type:'phys',cd:1.2,spd:900,m:2.8,col:'#ffd27a'}}
 };
 const CLSMAX=20;
 const clv=id=>(G&&G.cls&&G.cls[id])||0;
@@ -1182,12 +1180,21 @@ function shot(t,dmg,b,h){
 function fireBasic(){
   const h=G.hero,b=HEROES[h].basic;
   SRC=b.n;
-  const dmg=(9+2.2*G.lvl)*DMG_K*S.dmg*b.m;
+  const dmg=(16+3.6*G.lvl)*DMG_K*S.dmg*b.m;
   let n=1,burst=1,rate=b.cd;
   if(h==='archer'){rate/=1+.03*clv('a_aspd');n=Math.min(4,1+Math.floor(clv('a_multi')/5))}
   if(h==='dwarf'){rate/=1+.04*clv('d_aspd');burst=Math.min(5,1+Math.floor(clv('d_multi')/4))}
-  const tg=pick(n,b.type,dmg,1e5);
-  if(!tg.length){G.basicCd=0;return}
+  let tg=pick(n,b.type,dmg,1e5);
+  /* nunca quedarse sin objetivo: prioriza a quien ya te golpea y, si no hay candidatos, dispara al más cercano */
+  let close=null,cd0=1e12;
+  for(const e of G.enemies){if(e.dead)continue;const dd=Math.hypot(e.x-cx(),e.y-cy());if(dd<e.r+55&&dd<cd0){cd0=dd;close=e}}
+  if(close&&!tg.includes(close))tg=[close,...tg].slice(0,Math.max(1,n));
+  if(!tg.length){
+    let nr=null,nd=1e12;
+    for(const e of G.enemies){if(e.dead)continue;const dd=(e.x-cx())**2+(e.y-cy())**2;if(dd<nd){nd=dd;nr=e}}
+    if(!nr){G.basicCd=0;return}
+    tg=[nr];
+  }
   G.aim=Math.atan2(tg[0].y-cy(),tg[0].x-cx());
   if(burst>1){
     shot(tg[0],dmg,b,h);
@@ -1811,14 +1818,10 @@ function buildSkillsMenu(){
   skEls.length=0;
   SK.forEach((s,i)=>{
     const r=document.createElement('div');r.className='srow';
-    r.innerHTML='<span class="ic">'+TYPES[s.type].i+'</span><span class="nm">'+s.n+'</span><span class="lv"></span><button class="plus pt" title="Subir con un punto de habilidad">+</button><button class="plus gold" title="Subir con oro"></button>';
-    r.onmouseenter=()=>{hovSkill=i;refreshInfo()};
-    r.onmouseleave=()=>{hovSkill=-1;refreshInfo()};
-    r.onclick=()=>{selSkill=i;infoMode='skill';refreshAll()};
-    const bp=r.querySelector('.pt'),bg=r.querySelector('.gold');
-    bp.onclick=ev=>{ev.stopPropagation();skillUp(i,'pt')};
-    bg.onclick=ev=>{ev.stopPropagation();skillUp(i,'gold')};
-    box.appendChild(r);skEls.push({r,lv:r.querySelector('.lv'),pl:bp,pg:bg});
+    r.innerHTML='<span class="ic">'+TYPES[s.type].i+'</span><span class="nm">'+s.n+'<small>'+s.desc+'</small></span><span class="lv"></span><button class="plus buy"></button>';
+    const b=r.querySelector('.buy');
+    b.onclick=()=>skillBuy(i);
+    box.appendChild(r);skEls.push({r,lv:r.querySelector('.lv'),pl:b});
   });
 }
 const skGoldCost=l=>Math.round(80*Math.pow(1.28,l));
@@ -1833,17 +1836,18 @@ function skillUp(i,mode){
   refreshAll();return true;
 }
 function spendSkill(i){return skillUp(i,'pt')}
+const skillBuy=i=>G.pending>0?skillUp(i,'pt'):skillUp(i,'gold');
 function refreshSkills(){
   $('#pts').textContent=G.pending;
   $('#ptsbox').classList.toggle('on',G.pending>0);
+  const up=G.pending>0;
   SK.forEach((s,i)=>{
     const l=G.skills[s.id],e=skEls[i],max=l>=SKMAX,c=skGoldCost(l);
     e.lv.textContent=l?l+'/'+SKMAX:'—';
     e.r.classList.toggle('dim',!l);
-    e.r.classList.toggle('sel',infoMode==='skill'&&i===selSkill);
-    e.pl.disabled=max||G.pending<=0;
-    e.pg.disabled=max||G.gold<c;
-    e.pg.textContent=max?'MAX':'💰'+c;
+    e.pl.textContent=max?'MAX':(up?'+ punto':'💰 '+c);
+    e.pl.classList.toggle('gold',!up);
+    e.pl.disabled=max||(!up&&G.gold<c);
   });
 }
 
@@ -1894,7 +1898,7 @@ function skillDmg(s,l){
 }
 let lastInfo='';
 function setInfo(h){if(h!==lastInfo){lastInfo=h;$('#info').innerHTML=h;const ii=$('#infoInline');if(ii)ii.innerHTML=h}}
-function refreshInfo(){
+function refreshInfo(){return;
   const pid=hovPow||(hovSkill<0&&!hovCls&&infoMode==='pow'?selPow:null);
   if(pid){
     const sp=SPS.find(x=>x.id===pid),l=G.spLv[pid],un=G.lvl>=sp.unlock;
@@ -1939,7 +1943,7 @@ function refreshInfo(){
 
 /* --- inventario y dragón (abajo derecha) --- */
 let lastInv='';
-function refreshInv(){
+function refreshInv(){return;
   const it=G.items,kv=(a,b)=>'<div class="kv"><span>'+a+'</span><b>'+b+'</b></div>';
   let h='<div class="sec">Atributos</div>'+
     kv('Daño','x'+S.dmg.toFixed(2))+kv('Velocidad de ataque','x'+S.atk.toFixed(2))+kv('Alcance',Math.round(S.range))+
@@ -1954,60 +1958,55 @@ function buildDragonUI(){
   const box=$('#drSk');box.innerHTML='';
   for(const d of DRSK){
     const r=document.createElement('div');r.className='srow';
-    r.innerHTML='<span class="ic">'+d.icon+'</span><span class="nm"><span class="dnm"></span><small class="dl"></small></span><span class="lv"></span><button class="plus pt" title="Subir con un punto de dragón">+</button><button class="plus gold" title="Subir con oro"></button>';
-    const bp=r.querySelector('.pt'),bg=r.querySelector('.gold');
-    bp.onclick=ev=>{ev.stopPropagation();dragonUp(d.id,'pt');refreshAll()};
-    bg.onclick=ev=>{ev.stopPropagation();dragonUp(d.id,'gold');refreshAll()};
-    box.appendChild(r);drRows[d.id]={dn:r.querySelector('.dnm'),dl:r.querySelector('.dl'),lv:r.querySelector('.lv'),bp,bg};
+    r.innerHTML='<span class="ic">'+d.icon+'</span><span class="nm"><span class="dnm"></span><small class="dl"></small></span><span class="lv"></span><button class="plus buy"></button>';
+    const b=r.querySelector('.buy');
+    b.onclick=()=>{if(G.dr.pts>0)dragonUp(d.id,'pt');else dragonUp(d.id,'gold');refreshAll()};
+    box.appendChild(r);drRows[d.id]={dn:r.querySelector('.dnm'),dl:r.querySelector('.dl'),lv:r.querySelector('.lv'),b};
   }
   $('#drAuto').onchange=e=>{G.dr.auto=e.target.checked};
 }
 function refreshDragonUI(){
-  const dr=G.dr,dg=G.dragon;
-  $('#drStatus').textContent=dg?'🐉 Dragón Nv '+dr.lvl+' · aguanta enemigos cercanos'+(G.sdrags.length?' · 💀 x'+G.sdrags.length+' esqueleto(s)':''):(dr.egg?'🥚 Incubando… '+Math.ceil(dr.egg.t)+' s':'Sin dragón. Compra el huevo arriba ('+dr.eggCost+' 💰)'+(dr.deaths?' · ha caído '+dr.deaths+' vez/veces':''));
+  const dr=G.dr,dg=G.dragon,up=dr.pts>0;
+  $('#drStatus').textContent=dg?'🐉 Nv '+dr.lvl+(G.sdrags.length?' · 💀 x'+G.sdrags.length:'')+' · puntos: '+dr.pts:(dr.egg?'🥚 Incubando… '+Math.ceil(dr.egg.t)+' s':'Sin dragón: compra el huevo ('+dr.eggCost+' 💰)'+(dr.deaths?' · cayó '+dr.deaths+' vez/veces':'')+' · puntos: '+dr.pts);
   $('#drHp').style.width=(dg?100*dg.hp/dg.max:0)+'%';$('#drHpT').textContent=dg?'Vida '+Math.ceil(dg.hp)+' / '+Math.ceil(dg.max):'Vida —';
   $('#drXp').style.width=(100*dr.xp/drNeed())+'%';$('#drXpT').textContent='XP '+Math.floor(dr.xp)+' / '+drNeed();
   $('#drAuto').checked=!!dr.auto;
-  $('#drPts').textContent='Puntos de dragón: '+dr.pts+' (1 por nivel del dragón). Mejora con un punto (+) o con oro (💰).';
   for(const d of DRSK){
     const e=drRows[d.id],l=dr.sk[d.id],max=l>=DRMAX,c=drCost(d.id);
     e.dn.textContent=d.n;e.dl.textContent=d.d(l);
     e.lv.textContent=l+'/'+DRMAX;
-    e.bp.disabled=max||dr.pts<=0;
-    e.bg.disabled=max||G.gold<c;
-    e.bg.textContent=max?'MAX':'💰'+c;
+    e.b.textContent=max?'MAX':(up?'+ punto':'💰 '+c);
+    e.b.classList.toggle('gold',!up);
+    e.b.disabled=max||(!up&&G.gold<c);
   }
 }
 const heroEls={};
 let selCls=null,hovCls=null,infoMode='skill';
+const heroBuy=id=>G.pending>0?heroUp(id,'pt'):heroUp(id,'gold');
 function buildHeroMenu(){
   const box=$('#heroSk');box.innerHTML='';
   for(const k in heroEls)delete heroEls[k];
-  selCls=null;hovCls=null;infoMode='skill';
   const hd=HEROES[G.hero];
-  $('#heroName').textContent=hd.icon+' '+hd.n+' — '+hd.desc;
+  $('#heroName').textContent=hd.icon+' '+hd.n;
   CLS[G.hero].forEach(a=>{
     const r=document.createElement('div');r.className='srow';
-    r.innerHTML='<span class="ic">'+a.icon+'</span><span class="nm">'+a.n+'</span><span class="lv"></span><button class="plus pt" title="Subir con un punto de habilidad">+</button><button class="plus gold" title="Subir con oro"></button>';
-    r.onmouseenter=()=>{hovCls=a.id;refreshInfo()};
-    r.onmouseleave=()=>{hovCls=null;refreshInfo()};
-    r.onclick=()=>{selCls=a.id;infoMode='cls';refreshAll()};
-    const bp=r.querySelector('.pt'),bg=r.querySelector('.gold');
-    bp.onclick=ev=>{ev.stopPropagation();heroUp(a.id,'pt')};
-    bg.onclick=ev=>{ev.stopPropagation();heroUp(a.id,'gold')};
-    box.appendChild(r);heroEls[a.id]={r,lv:r.querySelector('.lv'),bp,bg};
+    r.innerHTML='<span class="ic">'+a.icon+'</span><span class="nm">'+a.n+'<small class="dl"></small></span><span class="lv"></span><button class="plus buy"></button>';
+    const b=r.querySelector('.buy');
+    b.onclick=()=>heroBuy(a.id);
+    box.appendChild(r);heroEls[a.id]={r,lv:r.querySelector('.lv'),dl:r.querySelector('.dl'),b};
   });
 }
 function refreshHero(){
+  const up=G.pending>0;
   for(const a of CLS[G.hero]){
     const e=heroEls[a.id];if(!e)continue;
     const l=clv(a.id),c=clsCost(a.id),max=l>=CLSMAX;
     e.lv.textContent=l?l+'/'+CLSMAX:'—';
+    e.dl.textContent=a.eff(Math.max(1,l));
     e.r.classList.toggle('dim',!l);
-    e.r.classList.toggle('sel',infoMode==='cls'&&selCls===a.id);
-    e.bp.disabled=max||G.pending<=0;
-    e.bg.disabled=max||G.gold<c;
-    e.bg.textContent=max?'MAX':'💰'+c;
+    e.b.textContent=max?'MAX':(up?'+ punto':'💰 '+c);
+    e.b.classList.toggle('gold',!up);
+    e.b.disabled=max||(!up&&G.gold<c);
   }
 }
 function buildTabs(){
@@ -2153,7 +2152,7 @@ function refreshBadges(){
   if(b){b.textContent=G.dr.pts;b.style.display=G.dr.pts>0?'flex':'none'}
 }
 function setupDrawers(){
-  const map={left:'#left',shopc:'#shopc',inv:'#inv'};
+  const map={left:'#left',shopc:'#shopc'};
   const btns=document.querySelectorAll('#tbar button');
   const unpause=()=>{if(G.drawerPause){G.paused=false;G.drawerPause=false}};
   const closeAll=()=>{for(const k in map)$(map[k]).classList.remove('open');btns.forEach(b=>b.classList.remove('on'));unpause()};
