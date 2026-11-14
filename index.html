@@ -130,19 +130,36 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   .heroes{grid-template-columns:repeat(2,1fr)}
   .hint{display:none}
 }
+#infoInline,.dhead,.bdg{display:none}
+@media (max-width:900px){
+  #info{display:none !important}
+  #infoInline{display:block;background:#1a1832;border:1px solid #2f2b57;border-radius:10px;padding:8px 10px;margin-bottom:10px}
+  #infoInline h3{font-size:15px}
+  .dhead{display:flex;position:sticky;top:-12px;z-index:3;justify-content:space-between;align-items:center;background:#15132b;padding:6px 0;margin:-4px 0 8px;font-size:12px;color:var(--mut)}
+  .dclose{background:#2b2850;border:0;color:#fff;border-radius:8px;width:40px;height:34px;font-size:16px}
+  #tbar button{position:relative;font-size:24px}
+  #tbar button span{font-size:11px}
+  .bdg{position:absolute;top:3px;right:calc(50% - 34px);min-width:20px;height:20px;border-radius:10px;background:#e0503a;color:#fff;font-size:12px;font-style:normal;font-weight:700;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 0 8px #e0503a}
+  #bar{top:64px;right:8px;bottom:auto;left:auto;transform:none;flex-direction:column;flex-wrap:nowrap;align-items:flex-end;max-width:none;gap:8px}
+  .ctl{width:46px;height:46px;min-width:46px;font-size:15px;padding:0;border-radius:12px;background:rgba(21,19,43,.85)}
+  .srow{font-size:14px;padding:9px 6px}
+  .item .nm{font-size:15px}.item .ds{font-size:12px}
+  .panel p{font-size:13px}.kv{font-size:13px}
+  .panel{max-height:68vh}
+}
 </style>
 </head>
 <body>
 <div class="panel" id="left">
   <div class="pts" id="ptsbox">★ Puntos de habilidad: <b id="pts">0</b></div>
+  <div id="infoInline"></div>
   <h2>Héroe</h2>
   <div id="heroName" class="sub" style="margin-bottom:6px"></div>
   <div id="heroSk"></div>
   <h2 style="margin-top:14px">Habilidades globales</h2>
   <div id="skills"></div>
-  <h2 style="margin-top:14px">Poderes</h2>
-  <div id="powers"></div>
-  <div class="hint">Cada nivel da 1 punto (experiencia). <b>Todas</b> las mejoras se pueden comprar con un punto (<b>+</b>) o con oro (<b>💰</b>). El juego no se detiene.<br><b>1-9, 0</b> suben con punto las 10 primeras globales · <b>P</b> pausa · <b>F</b> velocidad x1/x2/x3 · <b>Rueda</b> o <b>+ / -</b> zoom<br>Poderes: <b>Q W E R Z X C V B</b> (con <b>Shift</b> cambias AUTO/MANUAL)<br>Pasa el ratón sobre un enemigo para ver su armadura y resistencias.</div>
+  <div id="powers" style="display:none"></div>
+  <div class="hint">Cada nivel da 1 punto (experiencia). <b>Todas</b> las mejoras se pueden comprar con un punto (<b>+</b>) o con oro (<b>💰</b>). El juego no se detiene.<br><b>1-9, 0</b> suben con punto las 10 primeras globales · <b>P</b> pausa · <b>F</b> velocidad x1/x2/x3 · <b>Rueda</b> o <b>+ / -</b> zoom<br>Pasa el ratón sobre un enemigo para ver su armadura y resistencias.</div>
 </div>
 <div class="panel" id="info"></div>
 <div id="game">
@@ -162,9 +179,8 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 </div>
 <div class="panel" id="inv"><h2>Inventario</h2><div id="invTab"></div></div>
 <div id="tbar">
-  <button data-d="left">⚔️<span>Habilidades</span></button>
-  <button data-d="shopc">🛒<span>Tienda y dragón</span></button>
-  <button data-d="info">ℹ️<span>Info</span></button>
+  <button data-d="left">⚔️<span>Habilidades</span><i class="bdg" id="bdgSk"></i></button>
+  <button data-d="shopc">🛒<span>Tienda y dragón</span><i class="bdg" id="bdgSh"></i></button>
   <button data-d="inv">🎒<span>Inventario</span></button>
 </div>
 <script>
@@ -226,24 +242,16 @@ const ITEMS=[
 ];
 /* Ajustes de balance */
 const DMG_K=2.2;
-const HPK=.37;   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
-const spawnRate=t=>{const m=t/60;return Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))};
-const hpScale=t=>{const m=t/60;return m<2?1+.35*m:m<5?1.7+.75*(m-2):3.95*Math.exp(HPK*(m-5))};
+/* Tiempo efectivo de dificultad: al empezar los enemigos ya son como los del minuto 2 y se funde con la curva normal hacia el minuto 7 */
+const eT=t=>t+120*Math.max(0,1-t/420);
+const HPK=.26;   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
+const spawnRate=t=>{const m=eT(t)/60;return Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))};
+const hpScale=t=>{const m=eT(t)/60;return m<2?1+.35*m:m<5?1.7+.5*(m-2):3.2*Math.exp(HPK*(m-5))};
 const XPK=1.5,GOLDK=.6;   /* más experiencia y menos oro por enemigo */
-const foeDmg=t=>{const m=t/60;return .6*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
-const rampMult=l=>l>=12?1:.6+.4*(l-1)/11;   /* inicio más lento: el daño sube con el nivel */
+const foeDmg=t=>{const m=eT(t)/60;return .6*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
+const rampMult=l=>l>=12?1:.8+.2*(l-1)/11;   /* inicio más lento: el daño sube con el nivel */
 /* Poderes especiales del mago (se desbloquean por nivel, con enfriamiento) */
-const SPS=[
- {id:'nova',n:'Explosión',key:'q',icon:'💥',unlock:3,cd:14,desc:'Explota alrededor del mago: daño de quemadura, empuja y quema.'},
- {id:'storm',n:'Tormenta de rayos',key:'w',icon:'⛈️',unlock:6,cd:18,desc:'Fulmina a varios enemigos con rayos.'},
- {id:'skel',n:'Soldados esqueleto',key:'e',icon:'💀',unlock:9,cd:25,desc:'Invoca esqueletos que luchan por ti durante 20 s.'},
- {id:'freeze',n:'Ventisca',key:'r',icon:'🧊',unlock:12,cd:30,desc:'Hiela y ralentiza a todos los enemigos en alcance.'},
- {id:'meteor',n:'Lluvia de meteoros',key:'z',icon:'☄️',unlock:15,cd:22,desc:'Marca varios puntos y, tras un instante, caen meteoros con daño de quemadura en área.'},
- {id:'cloud',n:'Nube tóxica',key:'x',icon:'☠️',unlock:18,cd:24,desc:'Zona de veneno sobre el mayor grupo de enemigos durante varios segundos.'},
- {id:'judge',n:'Juicio divino',key:'c',icon:'🌟',unlock:21,cd:28,desc:'Daño divino a todos los enemigos en alcance y cura al mago.'},
- {id:'hole',n:'Agujero negro',key:'v',icon:'🕳️',unlock:24,cd:32,desc:'Atrae a los enemigos hacia un punto y los daña con oscuridad.'},
- {id:'warp',n:'Distorsión temporal',key:'b',icon:'⏳',unlock:27,cd:40,desc:'Ralentiza a los enemigos y acelera tus ataques un 50% unos segundos.'}
-];
+const SPS=[];   /* poderes especiales retirados por ahora (el resto del código los ignora) */
 /* Coste base de mejorar cada poder con oro (nivel 1 a 5): base*1.8^(nivel-1) */
 const SPBASE={nova:100,storm:140,skel:180,freeze:220,meteor:260,cloud:300,judge:340,hole:380,warp:420};
 const SPMAX=20;
@@ -260,7 +268,7 @@ const ULT={
  fire:{n:'Bola de fuego XL',perm:true,d:'Puede salir una bola gigante con mucho más daño.'},
  frost:{n:'Bola de hielo XL',perm:true,d:'Puede salir una bola de hielo gigante con mucho más daño.'},
  elec:{n:'Rayo rojo',perm:true,d:'Puede emitir un rayo rojo: más daño, más rebotes y sin límite de alcance.'},
- poison:{n:'Toque mortal',perm:true,d:'Posibilidad de matar al enemigo al instante (los jefes pierden 10% de vida).'},
+ poison:{n:'Toque mortal',perm:true,d:'Posibilidad de matar al instante a enemigos debilitados; a los demás les quita el 12% de su vida (los jefes, 10%).'},
  smite:{n:'Juicio de luz',cd:30,d:'Dispara un rayo de luz a cada enemigo del mapa.'},
  dark:{n:'Orbe gigante',cd:26,d:'Dispara un orbe de oscuridad gigante (tamaño x6).'},
  spear:{n:'Clavados al suelo',cd:30,d:'Lanza una lanza a cada enemigo del mapa y lo clava al piso 2 s.'},
@@ -270,7 +278,7 @@ const ULT={
  hammer:{n:'Rosario de luz',cd:24,d:'Dispara 10 bolas de luz seguidas, con daño x2,5.'}
 };
 const ultU=l=>Math.max(0,l-ULT_LVL);
-const ULTCH={dagger:[.08,.015],fire:[.10,.015],frost:[.10,.015],elec:[.06,.008],poison:[.04,.008],thorn:[.15,.02],hail:[.12,.015]};
+const ULTCH={dagger:[.08,.015],fire:[.10,.015],frost:[.10,.015],elec:[.06,.008],poison:[.03,.006],thorn:[.15,.02],hail:[.12,.015]};
 const ultChance=(id,l)=>Math.min(.6,ULTCH[id][0]+ULTCH[id][1]*ultU(l));   /* nivel máximo de las habilidades de nivel */
 const skK=l=>l<=5?1+.5*(l-1):3+.18*(l-5);
 const KEYS_LV='1234567890asdfgh';
@@ -282,7 +290,7 @@ const HEROES={
  mage:{n:'Mago',icon:'🧙',hp:100,col:'#8f7cff',desc:'Maestro de la magia: misiles, campo eléctrico, golems y supernova.',basic:{n:'Disparo arcano',type:'magic',cd:.9,spd:480,m:1,col:'#b684ff'}},
  archer:{n:'Arquero elfo',icon:'🏹',hp:90,col:'#7be07b',desc:'Daño preciso a distancia: críticos, flechas múltiples, veneno y esquiva.',basic:{n:'Flecha',type:'phys',cd:.8,spd:720,m:1.05,col:'#e6d28a'}},
  necro:{n:'Nigromante',icon:'💀',hp:95,col:'#9be07b',desc:'Ejército de no-muertos: esqueletos, vampiros, momias, muro de huesos y dragón esqueleto.',basic:{n:'Proyectil de hueso',type:'dark',cd:1,spd:430,m:1.2,col:'#b8f08a'}},
- dwarf:{n:'Enano artillero',icon:'🔫',hp:150,col:'#ffb35a',desc:'Fusil, granadas, minas y torreta. Muy resistente.',basic:{n:'Disparo de fusil',type:'phys',cd:1.2,spd:900,m:2.3,col:'#ffd27a'}}
+ dwarf:{n:'Enano artillero',icon:'🔫',hp:140,col:'#ffb35a',desc:'Fusil, granadas, minas y torreta. Muy resistente.',basic:{n:'Disparo de fusil',type:'phys',cd:1.2,spd:900,m:1.9,col:'#ffd27a'}}
 };
 const CLSMAX=20;
 const clv=id=>(G&&G.cls&&G.cls[id])||0;
@@ -312,10 +320,10 @@ const CLS={
  ],
  necro:[
   {id:'n_raise',n:'Levantar esqueletos',icon:'💀',desc:'Probabilidad de invocar un esqueleto cuando muere un enemigo.',eff:l=>Math.round(100*Math.min(.45,.06+.012*l))+'% prob. · duran '+f1(15+.3*l)+' s'},
-  {id:'n_vamp',n:'Vampiros',icon:'🦇',desc:'Vampiros vuelan a tu alrededor y atacan a los enemigos.',eff:l=>Math.min(7,1+Math.floor(l/3))+' vampiros permanentes'},
+  {id:'n_vamp',n:'Vampiros',icon:'🦇',desc:'Vampiros vuelan a tu alrededor y atacan a los enemigos.',eff:l=>Math.min(5,1+Math.floor(l/4))+' vampiros permanentes'},
   {id:'n_mummy',n:'Momias',icon:'🏺',desc:'Invoca momias resistentes que pelean contigo.',eff:l=>(2+Math.floor(l/8))+' momias · duran '+f1(28+.4*l)+' s · cada '+f1(Math.max(16,30-.7*l))+' s'},
   {id:'n_skeldragon',n:'Dragón esqueleto',icon:'🐉',desc:'Cuando tu dragón muere, vuelve como dragón esqueleto y sigue peleando. Requiere comprar el huevo como todos.',eff:l=>'Hasta '+(1+Math.floor((l-1)/5))+' dragón(es) esqueleto · fuerza '+Math.round(100*(.55+.025*l))+'%'},
-  {id:'n_wall',n:'Muro de huesos',icon:'🦴',desc:'Un muro de huesos te rodea; los enemigos deben romperlo para pasar.',eff:l=>'Dura '+f1(10+.3*l)+' s · cada '+f1(Math.max(14,28-.7*l))+' s'},
+  {id:'n_wall',n:'Muro de huesos',icon:'🦴',desc:'Un muro de huesos te rodea; los enemigos deben romperlo para pasar.',eff:l=>'Dura '+f1(8+.2*l)+' s · cada '+f1(Math.max(18,30-.6*l))+' s'},
   {id:'n_pest',n:'Pestilencia',icon:'☣️',desc:'Una nube de pestilencia te rodea, daña y ralentiza a los enemigos.',eff:l=>'Radio '+(105+3*l)+' · ralentiza '+Math.round(100*Math.min(.6,.25+.012*l))+'%'},
   {id:'n_curse',n:'Maldición',icon:'👁️',desc:'Maldice a los enemigos: reciben más daño durante unos segundos.',eff:l=>'+'+Math.round(100*(.25+.02*l))+'% de daño recibido · '+f1(6+.15*l)+' s · cada '+f1(Math.max(10,20-.5*l))+' s'},
   {id:'n_corpse',n:'Explosión de cadáveres',icon:'💣',desc:'Los enemigos muertos pueden explotar y dañar a los de alrededor.',eff:l=>Math.round(100*(.10+.012*l))+'% prob. · radio '+Math.round(65+1.2*l)}
@@ -328,7 +336,7 @@ const CLS={
   {id:'d_grenade',n:'Lanzagranadas',icon:'💣',desc:'Lanza granadas que explotan tras un instante.',eff:l=>(1+Math.floor(l/6))+' granada(s) · radio '+Math.round(70+1.5*l)+' · cada '+f1(Math.max(3,6.5-.15*l))+' s'},
   {id:'d_mines',n:'Campo minado',icon:'🧨',desc:'Siembra minas a tu alrededor que explotan al pisarlas.',eff:l=>'Hasta '+(4+Math.floor(l/2))+' minas · radio '+Math.round(60+1.2*l)},
   {id:'d_turret',n:'Torreta',icon:'🗼',desc:'Despliega torretas automáticas que disparan a los enemigos.',eff:l=>Math.min(3,1+Math.floor(l/8))+' torreta(s) · duran '+f1(25+.5*l)+' s · cada '+f1(Math.max(20,36-.8*l))+' s'},
-  {id:'d_armor',n:'Armadura de hierro',icon:'🛡️',desc:'Más vida máxima y menos daño recibido.',eff:l=>'+'+(6*l)+'% vida · -'+f1(2*l)+'% daño recibido'}
+  {id:'d_armor',n:'Armadura de hierro',icon:'🛡️',desc:'Más vida máxima y menos daño recibido.',eff:l=>'+'+(4*l)+'% vida · -'+f1(1.2*l)+'% daño recibido'}
  ]
 };
 const clsCost=id=>Math.round(90*Math.pow(1.3,clv(id)));
@@ -375,11 +383,11 @@ function recalc(){
   S.dmg=(1+.12*it.staff)*(1+.1*G.bonus)*rampMult(G.lvl);
   S.atk=(1+.05*it.ring)*(1+.015*clv('m_med'));
   S.range=300+15*it.crystal;
-  S.maxHp=Math.round((HEROES[G.hero].hp+8*(G.lvl-1)+25*it.robe)*(1+.06*clv('d_armor')));
-  S.regen=1+.6*it.amulet+.35*clv('m_med');
+  S.maxHp=Math.round((HEROES[G.hero].hp+25+8*(G.lvl-1)+25*it.robe)*(1+.04*clv('d_armor')));
+  S.regen=1.5+.6*it.amulet+.35*clv('m_med');
   S.xpM=1+.07*it.hat;
   S.goldM=1+.07*it.purse;
-  S.def=(1-.025*it.shield)*(1-.02*clv('d_armor'));
+  S.def=(1-.025*it.shield)*(1-.012*clv('d_armor'));
   S.dodge=clv('a_dodge')?Math.min(.25,.03+.011*clv('a_dodge')):0;
 }
 const cx=()=>W/2, cy=()=>H/2;
@@ -388,14 +396,14 @@ const dotLeft=e=>{let s=0;for(const t in e.dots)s+=e.dots[t].dps*mult(e,t)*e.dot
 
 /* ============ ENEMIGOS ============ */
 function spawnEnemy(boss){
-  const pool=EN.filter(d=>d.from*1.6<=G.t);
+  const pool=EN.filter(d=>d.from*1.6<=eT(G.t));
   const d=pool[Math.floor(Math.random()*pool.length)];
   const a=Math.random()*Math.PI*2,R=Math.max(420,Math.hypot(W,H)/2/Z+30);
   const hpM=hpScale(G.t);
   const e={d,n:(boss?'Jefe: ':'')+d.n,e:d.e,armor:d.armor,res:d.res,
     x:cx()+Math.cos(a)*R,y:cy()+Math.sin(a)*R,
     hp:d.hp*hpM*(boss?6:1),r:d.r*(boss?1.8:1),
-    sp:d.sp*(1+Math.min(.8,G.t/600)),dmg:d.dmg*foeDmg(G.t)*(boss?.9:1),
+    sp:d.sp*(1+Math.min(.8,eT(G.t)/600)),dmg:d.dmg*foeDmg(G.t)*(boss?.9:1),
     xp:d.xp*(boss?8:1),gold:d.gold*(boss?8:1),boss:!!boss,
     pending:0,dots:{},slow:null,acc:0,accT:.7,accType:'fire',flash:0,dead:false};
   let rng=d.ranged?{...d.ranged}:null;
@@ -450,6 +458,7 @@ function hitEnemy(p,e){
   if(p.xl)txt(e.x,e.y-e.r-16,'¡XL!',TYPES[p.type].c,18);
   if(p.kill&&!e.dead&&mult(e,p.type)>0&&Math.random()<p.kill){
     if(e.boss)dealDamage(e,e.max*.1,p.type);
+    else if(e.hp>p.dmg*30)dealDamage(e,e.max*.12,p.type);
     else{G.dmgBy[SRC]=(G.dmgBy[SRC]||0)+Math.max(0,e.hp);e.hp=0;txt(e.x,e.y-e.r-16,'☠ ¡MUERTE!','#82e04e',18);kill(e)}
   }
   if(p.burn)addDot(e,'fire',p.dmg*.35,3,false);
@@ -1173,7 +1182,7 @@ function shot(t,dmg,b,h){
 function fireBasic(){
   const h=G.hero,b=HEROES[h].basic;
   SRC=b.n;
-  const dmg=(9+1.6*G.lvl)*DMG_K*S.dmg*b.m;
+  const dmg=(9+2.2*G.lvl)*DMG_K*S.dmg*b.m;
   let n=1,burst=1,rate=b.cd;
   if(h==='archer'){rate/=1+.03*clv('a_aspd');n=Math.min(4,1+Math.floor(clv('a_multi')/5))}
   if(h==='dwarf'){rate/=1+.04*clv('d_aspd');burst=Math.min(5,1+Math.floor(clv('d_multi')/4))}
@@ -1189,11 +1198,11 @@ function fireBasic(){
 function heroOnKill(e){
   if(G.hero!=='necro'||G.inCorpse)return;
   const r=clv('n_raise');
-  if(r&&Math.random()<Math.min(.45,.06+.012*r))addAlly('skel',e.x,e.y,allyHp(50+10*r),hdmg(r)*.8,15+.3*r,'Esqueletos del nigromante');
+  if(r&&Math.random()<Math.min(.45,.06+.012*r))addAlly('skel',e.x,e.y,allyHp(50+10*r),hdmg(r)*.55,15+.3*r,'Esqueletos del nigromante');
   const c=clv('n_corpse');
   if(c&&Math.random()<.10+.012*c){
     const ps=SRC;G.inCorpse=true;SRC='Explosión de cadáveres';
-    const R=65+1.2*c,dm=Math.min(e.max*.5,hdmg(c)*3),ex=e.x,ey=e.y;
+    const R=65+1.2*c,dm=Math.min(e.max*.4,hdmg(c)*2.2),ex=e.x,ey=e.y;
     for(const o of G.enemies){if(o.dead||o===e)continue;if((o.x-ex)**2+(o.y-ey)**2<=(R+o.r)**2)dealDamage(o,dm,'dark')}
     G.fx.push({k:'ring',x:ex,y:ey,r:R,t:.3,c:'#9be07b'});
     G.inCorpse=false;SRC=ps;
@@ -1283,32 +1292,32 @@ function updateHero(dt){
     }
   }else if(h==='necro'){
     if((l=clv('n_vamp'))){
-      const want=Math.min(7,1+Math.floor(l/3));
+      const want=Math.min(5,1+Math.floor(l/4));
       let have=0;for(const a of G.allies)if(a.kind==='vamp')have++;
-      if(have<want){T.vampT=(T.vampT??1.5)-dt;if(T.vampT<=0){T.vampT=5;addAlly('vamp',x0,y0,allyHp(80+12*l),hdmg(l)*.7,1e9,'Vampiros')}}
+      if(have<want){T.vampT=(T.vampT??1.5)-dt;if(T.vampT<=0){T.vampT=5;addAlly('vamp',x0,y0,allyHp(80+12*l),hdmg(l)*.45,1e9,'Vampiros')}}
     }
     if((l=clv('n_mummy'))&&rdy('n_mummy')){
       if(countNear(x0,y0,range)<2)retry('n_mummy');
       else{
         const n=2+Math.floor(l/8);
-        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('mummy',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(180+35*l),hdmg(l),28+.4*l,'Momias')}
+        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('mummy',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(180+35*l),hdmg(l)*.7,28+.4*l,'Momias')}
         G.fx.push({k:'ring',x:x0,y:y0,r:60,t:.3,c:'#d8c79a'});
-        done('n_mummy',Math.max(16,30-.7*l));
+        done('n_mummy',Math.max(20,32-.6*l));
       }
     }
     if((l=clv('n_wall'))&&rdy('n_wall')){
       if(countNear(x0,y0,range)<3)retry('n_wall');
       else{
-        const segs=[];for(let i=0;i<14;i++){const hp=allyHp(100+20*l);segs.push({hp,max:hp})}
-        G.walls={R:82,t:10+.3*l,segs};
-        done('n_wall',Math.max(14,28-.7*l));
+        const segs=[];for(let i=0;i<14;i++){const hp=allyHp(60+10*l);segs.push({hp,max:hp})}
+        G.walls={R:82,t:8+.2*l,segs};
+        done('n_wall',Math.max(18,30-.6*l));
       }
     }
     if((l=clv('n_pest'))){
       T.pestTk=(T.pestTk??0)-dt;
       if(T.pestTk<=0){
         T.pestTk=.5;SRC='Pestilencia';
-        const R=105+3*l,d=hdmg(l)*.3,sl=Math.min(.6,.25+.012*l);
+        const R=105+3*l,d=hdmg(l)*.22,sl=Math.min(.6,.25+.012*l);
         for(const e of G.enemies){
           if(e.dead||Math.hypot(e.x-x0,e.y-y0)>R+e.r)continue;
           if(mult(e,'poison')>0)dealDamage(e,d,'poison');
@@ -1328,7 +1337,7 @@ function updateHero(dt){
     if((l=clv('d_grenade'))&&rdy('d_grenade')){
       if(countNear(x0,y0,range)<1)retry('d_grenade');
       else{
-        const n=1+Math.floor(l/6),R=70+1.5*l,d=hdmg(l)*3;
+        const n=1+Math.floor(l/6),R=70+1.5*l,d=hdmg(l)*2.3;
         const pts=[bestSpot(70,range)];
         const near=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=range);
         for(let i=1;i<n&&near.length;i++){const e=near[Math.floor(Math.random()*near.length)];pts.push({x:e.x,y:e.y})}
@@ -1354,7 +1363,7 @@ function updateHero(dt){
         for(const e of G.enemies){if(e.dead)continue;if((e.x-m.x)**2+(e.y-m.y)**2<=(e.r+14)**2){trig=true;break}}
         if(!trig)continue;
         G.mines.splice(i,1);SRC='Campo minado';
-        const R=60+1.2*l,d=hdmg(l)*3.2;
+        const R=60+1.2*l,d=hdmg(l)*2.5;
         for(const o of G.enemies){if(o.dead)continue;if((o.x-m.x)**2+(o.y-m.y)**2<=(R+o.r)**2)dealDamage(o,d,'fire')}
         G.fx.push({k:'ring',x:m.x,y:m.y,r:R,t:.3,c:'#ff7a3d'});
       }
@@ -1369,7 +1378,7 @@ function updateHero(dt){
     }
     if(G.turrets.length){
       SRC='Torreta';
-      const tl=clv('d_turret'),d=hdmg(tl||1)*.9;
+      const tl=clv('d_turret'),d=hdmg(tl||1)*.7;
       for(const t of G.turrets){
         t.life-=dt;t.cd-=dt;
         if(t.cd<=0){
@@ -1884,6 +1893,7 @@ function skillDmg(s,l){
   return d;
 }
 let lastInfo='';
+function setInfo(h){if(h!==lastInfo){lastInfo=h;$('#info').innerHTML=h;const ii=$('#infoInline');if(ii)ii.innerHTML=h}}
 function refreshInfo(){
   const pid=hovPow||(hovSkill<0&&!hovCls&&infoMode==='pow'?selPow:null);
   if(pid){
@@ -1892,7 +1902,7 @@ function refreshInfo(){
       '<div class="kv"><span>Tecla</span><b>'+sp.key.toUpperCase()+'</b></div><div class="kv"><span>Enfriamiento</span><b>'+Math.round(sp.cd*spCdF(l))+' s</b></div>'+
       '<div class="kv"><span>Cada nivel</span><b>+15% efecto · -2.5% enfriam.</b></div>'+
       (un&&l<SPMAX?'<div class="kv"><span>Coste</span><b>1 punto o '+powerCost(pid)+' 💰</b></div>':'');
-    if(h!==lastInfo){lastInfo=h;$('#info').innerHTML=h}
+    setInfo(h)
     return;
   }
   const cid=hovCls||(hovSkill<0&&infoMode==='cls'?selCls:null);
@@ -1904,7 +1914,7 @@ function refreshInfo(){
         '<div class="kv"><span>Ahora</span><b>'+(l?a.eff(l):'—')+'</b></div>'+
         (l<CLSMAX?'<div class="kv"><span>Siguiente nivel</span><b>'+a.eff(l+1)+'</b></div><div class="kv"><span>Coste</span><b>1 punto o '+clsCost(cid)+' 💰</b></div>':'')+
         '<p class="sub">Las habilidades de héroe se pagan con puntos de habilidad (experiencia) u oro.</p>';
-      if(h!==lastInfo){lastInfo=h;$('#info').innerHTML=h}
+      setInfo(h)
       return;
     }
   }
@@ -1924,7 +1934,7 @@ function refreshInfo(){
     h+='<div class="sec" style="color:#ffd24a">★ Ultimate (Nv5): '+u.n+'</div><div class="sub" style="color:#e8d9a0">'+u.d+'</div>';
     if(l>=ULT_LVL)h+='<div class="kv"><span>Estado</span><b>'+(u.perm?Math.round(ultChance(s.id,l)*100)+'% de probabilidad':(G.ultCd[s.id]>0?'recarga '+Math.ceil(G.ultCd[s.id])+' s':'¡lista!'))+'</b></div>';
   }
-  if(h!==lastInfo){lastInfo=h;$('#info').innerHTML=h}
+  setInfo(h)
 }
 
 /* --- inventario y dragón (abajo derecha) --- */
@@ -1937,8 +1947,6 @@ function refreshInv(){
     kv('Oro','+'+Math.round((S.goldM-1)*100)+'%')+kv('Daño recibido','-'+Math.round((1-S.def)*100)+'%')+
     '<div class="sec">Objetos</div>';
   for(const o of ITEMS)h+=kv(o.n,it[o.id]+'/'+o.max);
-  h+='<div class="sec">Poderes</div>';
-  for(const sp of SPS)h+=kv(sp.icon+' '+sp.n,G.lvl>=sp.unlock?G.spLv[sp.id]+'/'+SPMAX:'Nv '+sp.unlock);
   if(h!==lastInv){lastInv=h;$('#invTab').innerHTML=h}
 }
 const drRows={};
@@ -2011,7 +2019,7 @@ function buildTabs(){
   });
 }
 function toggleDrWin(v){const w=$('#drWin');w.classList.toggle('open',v===undefined?!w.classList.contains('open'):v)}
-function refreshAll(){refreshShop();refreshSkills();refreshHero();refreshPowers();refreshInfo();refreshInv();refreshDragonUI()}
+function refreshAll(){refreshShop();refreshSkills();refreshHero();refreshPowers();refreshInfo();refreshInv();refreshDragonUI();refreshBadges()}
 
 const barEls={};
 function buildBar(){
@@ -2139,14 +2147,29 @@ function gameOver(){
   G.over=true;G.rankPos=saveRun();
   showOver();
 }
+function refreshBadges(){
+  const a=$('#bdgSk'),b=$('#bdgSh');
+  if(a){a.textContent=G.pending;a.style.display=G.pending>0?'flex':'none'}
+  if(b){b.textContent=G.dr.pts;b.style.display=G.dr.pts>0?'flex':'none'}
+}
 function setupDrawers(){
-  const map={left:'#left',shopc:'#shopc',info:'#info',inv:'#inv'};
+  const map={left:'#left',shopc:'#shopc',inv:'#inv'};
   const btns=document.querySelectorAll('#tbar button');
-  const closeAll=()=>{for(const k in map)$(map[k]).classList.remove('open');btns.forEach(b=>b.classList.remove('on'))};
+  const unpause=()=>{if(G.drawerPause){G.paused=false;G.drawerPause=false}};
+  const closeAll=()=>{for(const k in map)$(map[k]).classList.remove('open');btns.forEach(b=>b.classList.remove('on'));unpause()};
+  for(const k in map){
+    const el=$(map[k]);
+    if(!el.insertBefore)continue;
+    const h=document.createElement('div');h.className='dhead';
+    h.innerHTML='<span>⏸ El juego se pausa mientras compras</span><button class="dclose">✕</button>';
+    el.insertBefore(h,el.firstChild);
+    h.querySelector('.dclose').onclick=closeAll;
+  }
   btns.forEach(b=>b.onclick=()=>{
+    if(G.modal)return;
     const k=b.getAttribute('data-d'),el=$(map[k]),was=el.classList.contains('open');
     closeAll();
-    if(!was){el.classList.add('open');b.classList.add('on')}
+    if(!was){el.classList.add('open');b.classList.add('on');if(!G.paused&&!G.over){G.paused=true;G.drawerPause=true}}
   });
   window.closeDrawers=closeAll;
 }
