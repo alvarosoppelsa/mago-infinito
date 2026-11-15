@@ -155,8 +155,10 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 .bsec{min-width:0}
 #heroSec{--c:6}#skSec{--c:6}#powSec{--c:5}#invSec{--c:8}#drSec{--c:5}
 #bottomp .slots{grid-template-columns:repeat(var(--c),minmax(0,1fr));grid-auto-rows:70px;gap:4px}
-#bottomp .btitle{height:54px;margin:0 0 6px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:2px;overflow:hidden}
-#bottomp .btitle>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bottomp .btitle{height:24px;margin:0 0 6px;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:5px;overflow:hidden}
+#bottomp .btitle>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bottomp .btitle>span:first-child{flex:1 1 auto}
+#bottomp .btitle>.auto-upgrade{flex:0 0 auto;margin-left:auto}
 #bottomp .pts{margin:0;padding:1px 7px;font-size:10px;letter-spacing:0;text-transform:none;flex-shrink:0}
 #bottomp .chk{white-space:nowrap;font-size:10px}
 #heroName{color:#ffe7a8}
@@ -218,7 +220,7 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   .slot-wrap>.auto-upgrade{min-height:22px;min-width:22px;padding:2px;gap:2px}
   .slot-wrap>.auto-upgrade input{width:16px;height:16px}
   .slot-wrap .has-auto .power-star{top:28px}
-  #bottomp .btitle{height:54px;flex-direction:row;align-items:center}
+  #bottomp .btitle{height:26px;flex-direction:row;align-items:center}
   .slot{height:70px}
   .slot .si{font-size:26px}.slot .sl{font-size:11px}.slot .sc{font-size:12px}
 }
@@ -232,11 +234,11 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 </div>
 <div class="panel" id="bottomp">
   <div class="bsec" id="heroSec">
-    <div class="btitle"><span id="heroName"></span><span class="pts" id="ptsbox" title="Cada nivel da 1 punto. Pulsa un icono para subirlo: gasta un punto y, si no hay, oro.">★ Puntos: <b id="pts">0</b></span></div>
+    <div class="btitle"><span id="heroName"></span><span class="pts" id="ptsbox" title="Puntos de héroe disponibles. Cada nivel da 1 punto. Pulsa un icono para subirlo: gasta un punto y, si no hay, oro.">★ <b id="pts">0</b></span></div>
     <div id="heroSk" class="slots"></div>
   </div>
   <div class="bsec" id="skSec">
-    <div class="btitle"><span id="towerTitle">🗼 Torre del mago</span><span class="pts" id="tptsbox" title="Cada nivel de la torre da 1 punto para sus habilidades y poderes. Pulsa un icono para subirlo: gasta un punto y, si no hay, oro.">★ Puntos: <b id="tpts">0</b></span></div>
+    <div class="btitle"><span id="towerTitle">🗼 Torre del mago</span><span class="pts" id="tptsbox" title="Cada nivel de la torre da 1 punto para sus habilidades y poderes. Pulsa un icono para subirlo: gasta un punto y, si no hay, oro.">★ <b id="tpts">0</b></span></div>
     <div id="skills" class="slots"></div>
     <div id="powers" style="display:none"></div>
   </div>
@@ -249,7 +251,7 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
     <div id="shop" class="slots"></div>
   </div>
   <div class="bsec" id="drSec">
-    <div class="btitle"><span id="drStatus"></span><label class="chk"><input type="checkbox" id="drAuto"><b id="drAutoRank"></b> Reponer huevo</label></div>
+    <div class="btitle"><span id="drStatus"></span><span class="pts" title="Puntos disponibles para mejorar habilidades del dragón">★ <b id="drPts">0</b></span></div>
     <div id="drSk" class="slots"></div>
   </div>
 </div>
@@ -5439,8 +5441,7 @@ function refreshAutoUpgradeUi(){
     control.rank.textContent=priority?String(priority):'';
     control.label.dataset.priority=priority?String(priority):'';
   }
-  const egg=$('#drAuto'),rank=$('#drAutoRank'),priority=G.autoUpgrades.indexOf('slot:inventory:egg')+1;
-  if(egg)egg.checked=priority>0;if(rank)rank.textContent=priority?String(priority):'';
+
 }
 function autoUpgradeWallet(option){return option.wallet==='dragon'?G.dr.pts:option.wallet?G[option.wallet]:0}
 function runAutoUpgrades(budget=16){
@@ -5624,7 +5625,6 @@ const drRows={};
 function buildDragonUI(){
   const box=$('#drSk');box.innerHTML='';
   for(const d of DRSK)drRows[d.id]=mkSlot(box,d.icon,()=>{if(G.dr.pts>0)dragonUp(d.id,'pt');else dragonUp(d.id,'gold');refreshAll()},()=>drTip(d),'slot:dragon:'+d.id);
-  $('#drAuto').onchange=e=>setAutoUpgrade('slot:inventory:egg',e.target.checked);
 }
 function drTip(d){
   const l=G.dr.sk[d.id],max=l>=DRMAX;
@@ -5634,8 +5634,9 @@ function drTip(d){
 }
 function refreshDragonUI(){
   const dr=G.dr,dg=G.dragon,up=dr.pts>0;
-  $('#drStatus').textContent='🐉 Dragón · '+(dg?'Nv '+dr.lvl+(G.sdrags.length?' · 💀 x'+G.sdrags.length:''):(dr.egg?'🥚 incubando '+Math.ceil(dr.egg.t)+' s':'sin dragón (huevo '+dr.eggCost+' 💰)'))+' · puntos: '+dr.pts;
-  $('#drAuto').checked=!!dr.auto;
+  $('#drStatus').textContent='🐉 Dragón';
+  $('#drStatus').title='Dragón · '+(dg?'Nv '+dr.lvl+(G.sdrags.length?' · 💀 x'+G.sdrags.length:''):(dr.egg?'🥚 '+Math.ceil(dr.egg.t)+' s':'Nv '+dr.lvl));
+  $('#drPts').textContent=dr.pts;
   for(const d of DRSK){
     const e=drRows[d.id],l=dr.sk[d.id],max=l>=DRMAX,c=drCost(d.id);
     setPowerStar(e.b,l);e.lv.textContent=l+'/'+DRMAX;
@@ -6773,7 +6774,7 @@ function powTip(sp){
 }
 function refreshTowerUi(){
   const T=G.tower;if(!T)return;
-  const tt=$('#towerTitle');if(tt)tt.textContent='🗼 Torre · Nv '+T.lvl+(towerCount()>1?' · ×'+towerCount():'');
+  const tt=$('#towerTitle');if(tt){tt.textContent='🗼 Torre'+(towerCount()>1?' ×'+towerCount():'');tt.title='Torre del mago · Nivel '+T.lvl}
   const tp=$('#tpts');if(tp)tp.textContent=G.tpending;
   const tb=$('#tptsbox');if(tb)tb.classList.toggle('on',G.tpending>0);
   for(const sp of SPS){
