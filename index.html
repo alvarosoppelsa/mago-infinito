@@ -151,9 +151,9 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   .panel{max-height:68vh}
 }
 @media (pointer:coarse){.plus.buy{min-width:88px;height:42px;font-size:14px}}
-#bottomp{grid-column:1;grid-row:2;display:grid;grid-template-columns:6fr 6fr 5fr 8fr 5fr;gap:12px;align-items:start;padding:8px 14px 10px;border-top:3px solid #8a6a2a;background:linear-gradient(180deg,#241d30,#120f1a);box-shadow:0 -6px 18px #000a}
+#bottomp{grid-column:1;grid-row:2;display:grid;grid-template-columns:6fr 6fr 6fr 5fr 8fr 5fr;gap:12px;align-items:start;padding:8px 14px 10px;border-top:3px solid #8a6a2a;background:linear-gradient(180deg,#241d30,#120f1a);box-shadow:0 -6px 18px #000a}
 .bsec{min-width:0}
-#heroSec{--c:6}#skSec{--c:6}#powSec{--c:5}#invSec{--c:8}#drSec{--c:5}
+#heroSec{--c:6}#heroSec2{--c:6}#skSec{--c:6}#powSec{--c:5}#invSec{--c:8}#drSec{--c:5}
 #bottomp .slots{grid-template-columns:repeat(var(--c),minmax(0,1fr));grid-auto-rows:70px;gap:4px}
 #bottomp .btitle{height:24px;margin:0 0 6px;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:5px;overflow:hidden}
 #bottomp .btitle>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -161,7 +161,7 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 #bottomp .btitle>.auto-upgrade{flex:0 0 auto;margin-left:auto}
 #bottomp .pts{margin:0;padding:1px 7px;font-size:10px;letter-spacing:0;text-transform:none;flex-shrink:0}
 #bottomp .chk{white-space:nowrap;font-size:10px}
-#heroName{color:#ffe7a8}
+#heroName,#heroName2{color:#ffe7a8}
 .slot.lit{border-color:#ffd24a;box-shadow:0 0 8px #ffd24a66,inset 0 0 8px #000a}
 .slot-wrap{position:relative;min-width:0;height:100%}
 .slot-wrap>.slot{width:100%;height:100%;padding-top:18px}
@@ -210,9 +210,9 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 @media (max-width:900px){
   #bottomp{display:none;grid-column:auto;grid-row:auto;position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));max-height:68vh;z-index:8;flex-direction:column;border-radius:16px 16px 0 0;overflow:auto}
   #bottomp.open{display:flex;flex-wrap:nowrap;gap:16px}
-  #bottomp[data-mode=sk] #invSec,#bottomp[data-mode=sk] #drSec,#bottomp[data-mode=sh] #heroSec,#bottomp[data-mode=sh] #skSec,#bottomp[data-mode=sh] #powSec{display:none}
+  #bottomp[data-mode=sk] #invSec,#bottomp[data-mode=sk] #drSec,#bottomp[data-mode=sh] #heroSec,#bottomp[data-mode=sh] #heroSec2,#bottomp[data-mode=sh] #skSec,#bottomp[data-mode=sh] #powSec{display:none}
   #bottomp .slots{grid-template-columns:repeat(4,minmax(0,1fr))}
-  #bottomp #heroSk,#bottomp #skills{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #bottomp #heroSk,#bottomp #heroSk2,#bottomp #skills{grid-template-columns:repeat(6,minmax(0,1fr))}
   #bottomp #powSlots{grid-template-columns:repeat(5,minmax(0,1fr))}
   .bsec,#bottomp .bsec{flex:1 1 auto;width:100%}
   #bottomp .slots{grid-auto-rows:86px}
@@ -236,6 +236,10 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   <div class="bsec" id="heroSec">
     <div class="btitle"><span id="heroName"></span><span class="pts" id="ptsbox" title="Puntos de héroe disponibles. Cada nivel da 1 punto. Pulsa un icono para subirlo: gasta un punto y, si no hay, oro.">★ <b id="pts">0</b></span></div>
     <div id="heroSk" class="slots"></div>
+  </div>
+  <div class="bsec" id="heroSec2">
+    <div class="btitle"><span id="heroName2"></span><span class="pts" id="ptsbox2" title="Puntos del segundo héroe. Cada nivel da 1 punto a cada héroe.">★ <b id="pts2">0</b></span></div>
+    <div id="heroSk2" class="slots"></div>
   </div>
   <div class="bsec" id="skSec">
     <div class="btitle"><span id="towerTitle">🗼 Torre del mago</span><span class="pts" id="tptsbox" title="Cada nivel de la torre da 1 punto para sus habilidades y poderes. Pulsa un icono para subirlo: gasta un punto y, si no hay, oro.">★ <b id="tpts">0</b></span></div>
@@ -281,10 +285,10 @@ const SK=[
  {id:'dark',n:'Orbe oscuro',type:'dark',kind:'orb',cd:2.4,dmg:18,spd:210,size:12,life:2.4,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Orbe lento que atraviesa a todos los enemigos.'},
  {id:'spear',n:'Lanza de acero',type:'phys',kind:'orb',cd:1.5,dmg:16,spd:520,size:7,life:1.2,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Lanza veloz que atraviesa a todos los enemigos en línea.'},
  {id:'pulse',n:'Pulso arcano',type:'magic',kind:'pulse',cd:2.6,dmg:14,cnt:l=>1,desc:'Onda mágica que golpea a todos los enemigos cercanos. Más radio cada nivel.'},
- {id:'thorn',n:'Espinas venenosas',type:'poison',kind:'burst',cd:2.4,dmg:8,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Brotan espinas en área que envenenan (se acumula).'},
  {id:'hail',n:'Granizo',type:'ice',kind:'burst',cd:2.2,dmg:15,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Lluvia de hielo en área que ralentiza.'},
  {id:'orbit',n:'Bolas de fuego orbitales',type:'fire',kind:'passive',cd:0,dmg:12,cnt:l=>Math.min(5,l),desc:'Bolas de fuego giran alrededor de la torre (1 por nivel, hasta 5) y queman a quien toquen. Con cada nivel son más grandes, rápidas y fuertes.'},
- {id:'tentacle',n:'Pulpo vampírico',type:'dark',kind:'passive',cd:0,dmg:9,cnt:l=>Math.min(8,1+Math.floor((l-1)/2)),desc:'Un pulpo violeta ata a los enemigos con tentáculos (+1 cada 2 niveles, hasta 8): les roba vida y te cura.'},
+ {id:'lightning',n:'Relámpago',type:'elec',kind:'smite',cd:2,dmg:20,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Un relámpago cae sobre el enemigo y daña en área. Más rayos con el nivel.'},
+ {id:'wind',n:'Cuchilla de viento',type:'phys',kind:'orb',cd:1.3,dmg:13,spd:600,size:7,life:1.1,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Cuchillas de aire veloces que atraviesan a todos los enemigos en línea.'},
  {id:'goldshot',n:'Disparo de oro',type:'phys',kind:'proj',cd:1.2,dmg:14,spd:520,size:6,cnt:l=>1+(l>=5)+(l>=10)+(l>=15),desc:'Da oro extra cuando mata. Desde el Nv6 su daño aumenta con el oro que tengas.'}
 ];
 /* res: multiplicador de daño por tipo (0 = inmune, <1 resiste, >1 débil) */
@@ -319,7 +323,12 @@ const EN=[
  {n:'Mamut de hielo',e:'🦣',col:'#a8d8f0',armor:'Pelaje helado',hp:230,sp:30,dmg:18,xp:16,gold:8,r:23,from:180,res:{ice:0,fire:1.8,phys:.7,elec:1.2,magic:1.1,dark:1.1}},
  {n:'Guardián sagrado',e:'🛡️',col:'#ffe27a',armor:'Aura sagrada',hp:100,sp:44,dmg:13,xp:14,gold:7,r:16,from:190,invul:{every:5,dur:1.5},res:{divine:.3,dark:1.8,phys:.7,magic:1,fire:1,poison:.8}},
  {n:'Caballero de cristal',e:'💎',col:'#7fe0ff',armor:'Cristal',hp:120,sp:42,dmg:16,xp:15,gold:8,r:16,from:210,invul:{every:7,dur:1.2},res:{phys:.3,magic:1.6,elec:1.3,ice:.5,fire:.7,divine:1.2,poison:0}},
- {n:'Hidra',e:'🐍',col:'#3aa86a',armor:'Escamas regenerativas',hp:210,sp:38,dmg:17,xp:20,gold:10,r:21,from:280,split:{n:2,gen:1},regen:.03,res:{poison:.4,fire:1.4,ice:.8,phys:.9,magic:1.1,dark:1.2}}
+ {n:'Hidra',e:'🐍',col:'#3aa86a',armor:'Escamas regenerativas',hp:210,sp:38,dmg:17,xp:20,gold:10,r:21,from:280,split:{n:2,gen:1},regen:.03,res:{poison:.4,fire:1.4,ice:.8,phys:.9,magic:1.1,dark:1.2}},
+ /* Asedio: siege = multiplica el daño contra torres y las prefiere como objetivo; bomb = explota al tocar; aura = potencia a los cercanos */
+ {n:'Ariete de asedio',e:'🪵',col:'#a0784a',armor:'Madera y hierro',hp:190,sp:30,dmg:20,xp:15,gold:8,r:19,from:60,siege:3,res:{phys:.5,fire:1.6,magic:1.1,poison:.5}},
+ {n:'Zapador',e:'💣',col:'#ff6a3a',armor:'Tela',hp:22,sp:118,dmg:7,xp:6,gold:3,r:11,from:40,swarm:3,bomb:true,res:{fire:0,phys:1.1,ice:1.2,elec:1.3}},
+ {n:'Comandante orco',e:'📯',col:'#e0a030',armor:'Armadura pesada',hp:150,sp:42,dmg:14,xp:16,gold:9,r:17,from:110,aura:{r:180,sp:.35,dm:.3},res:{phys:.7,divine:1.2,dark:1.1,poison:.9}},
+ {n:'Catapulta',e:'🏗️',col:'#b08a58',armor:'Madera',hp:80,sp:26,dmg:30,xp:14,gold:8,r:18,from:140,siege:2,ranged:{range:420,cd:4,spd:300,col:'#c8a060'},res:{phys:.8,fire:1.7,magic:1.2,elec:1.1,poison:.6}}
 ];
 const ECOL={'Esqueleto':'#cfd3da','Slime':'#6be06b','Goblin':'#9ccf4a','Zombi':'#86b36a','Espectro':'#9fb8ff','Gólem':'#b89c78','Elemental de fuego':'#ff7a3d','Elemental de hielo':'#7fd6ff','Demonio':'#ff4a4a','Autómata':'#9aa5b5','Arquero esqueleto':'#e6d28a','Hechicero oscuro':'#b684ff','Francotirador':'#ff7a7a'};
 const ITEMS=[
@@ -335,7 +344,8 @@ const ITEMS=[
  {id:'fang',n:'🧛 Colmillo vampírico',max:50,cost:n=>Math.round(65*Math.pow(1.27,n)),ds:'Cada baja te cura un 0,04% de tu vida máxima'},
  {id:'luck',n:'🍀 Trébol de la suerte',max:50,cost:n=>Math.round(70*Math.pow(1.27,n)),ds:'+1% probabilidad de crítico y +4% de daño crítico (ataques y habilidades; máx. 60%)'},
  {id:'banner',n:'🚩 Estandarte de mando',max:50,cost:n=>Math.round(65*Math.pow(1.26,n)),ds:'+6% de vida y +6% de daño de tus aliados invocados (afecta a las nuevas invocaciones)'},
- {id:'hourglass',n:'⏳ Reloj de arena',max:50,cost:n=>Math.round(60*Math.pow(1.26,n)),ds:'+3% de duración de zonas, estados e invocaciones'},
+ {id:'core',n:'🗼 Núcleo de torre',max:50,cost:n=>Math.round(55*Math.pow(1.25,n)),ds:'+8% experiencia de las torres'},
+ {id:'hunter',n:'🗡️ Filo del cazador',max:50,cost:n=>Math.round(65*Math.pow(1.26,n)),ds:'+6% de daño contra jefes'},
  {id:'talisman',n:'🧿 Talismán de evasión',max:50,cost:n=>Math.round(70*Math.pow(1.27,n)),ds:'+0,5% de esquiva (máx. 25% de este objeto)'}
 ];
 // Conserva el balance de niveles 0–20; después sigue mejorando sin daño negativo.
@@ -344,13 +354,13 @@ const itemShieldFactor=l=>l<=20?1-.025*l:.5*Math.pow(.975,l-20);
 const DMG_K=2.2;
 /* Tiempo efectivo de dificultad: al empezar los enemigos ya son como los del minuto 2 y se funde con la curva normal hacia el minuto 7 */
 const eT=t=>t+120*Math.max(0,1-t/420);
-const HPK=.26;   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
+const HPK=.34;   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
 /* A partir del minuto 6 salen menos enemigos pero cada uno es más fuerte (misma dificultad total, menos carga para el equipo) */
 const cntF=t=>{const m=eT(t)/60;return m<=6?1:Math.max(.4,1-.6*(m-6)/10)};
-const spawnRate=t=>{const m=eT(t)/60;return Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))*cntF(t)};
-const hpScale=t=>{const m=eT(t)/60;return m<2?1+.35*m:m<5?1.7+.5*(m-2):3.2*Math.exp(HPK*(m-5))};
+const spawnRate=t=>{const m=eT(t)/60;return 1.25*(1+.12*Math.min(20,Math.max(0,m-3)))*Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))*cntF(t)};
+const hpScale=t=>{const m=eT(t)/60;return 1.25*(m<2?1+.35*m:m<5?1.7+.5*(m-2):3.2*Math.exp(HPK*(m-5)))};
 const XPK=1.5,GOLDK=.6;   /* más experiencia y menos oro por enemigo */
-const foeDmg=t=>{const m=eT(t)/60;return .6*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
+const foeDmg=t=>{const m=eT(t)/60;return .69*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
 const rampMult=l=>l>=12?1:.8+.2*(l-1)/11;   /* inicio más lento: el daño sube con el nivel */
 /* Poderes automáticos: se desbloquean con el nivel compartido de las torres. */
 /* Poderes de la torre: se desbloquean con el nivel de la torre (3, 6, 9... 27) */
@@ -360,25 +370,26 @@ const SPS=[
  {id:'skel',n:'Soldados esqueleto',key:'e',icon:'💀',unlock:9,cd:25,desc:'Invoca esqueletos que luchan por ti durante 20 s.'},
  {id:'freeze',n:'Ventisca',key:'r',icon:'🧊',unlock:12,cd:30,desc:'Hiela y ralentiza a todos los enemigos en alcance.'},
  {id:'meteor',n:'Lluvia de meteoros',key:'z',icon:'☄️',unlock:15,cd:22,desc:'Marca varios puntos y, tras un instante, caen meteoros con daño de quemadura en área.'},
- {id:'cloud',n:'Nube tóxica',key:'x',icon:'☠️',unlock:18,cd:24,desc:'Zona de veneno sobre el mayor grupo de enemigos durante varios segundos.'},
  {id:'judge',n:'Juicio divino',key:'c',icon:'🌟',unlock:21,cd:28,desc:'Daño divino a todos los enemigos en alcance y cura al héroe.'},
  {id:'hole',n:'Agujero negro',key:'v',icon:'🕳️',unlock:24,cd:32,desc:'Atrae a los enemigos hacia un punto y los daña con oscuridad.'},
- {id:'warp',n:'Distorsión temporal',key:'b',icon:'⏳',unlock:27,cd:40,desc:'Ralentiza a los enemigos y acelera tus ataques un 50% unos segundos.'},
- {id:'barrier',n:'Barrera rúnica',key:'n',icon:'🔰',unlock:30,cd:36,desc:'Protege al héroe con un escudo y libera desde la torre una onda arcana que daña y ralentiza.'}
+ {id:'barrier',n:'Barrera rúnica',key:'n',icon:'🔰',unlock:30,cd:36,desc:'Protege al héroe con un escudo y libera desde la torre una onda arcana que daña y ralentiza.'},
+ {id:'quake',n:'Terremoto',key:'g',icon:'🌋',unlock:33,cd:26,desc:'Sacude el suelo alrededor de la torre: daño físico a todos en alcance y los aturde.'},
+ {id:'spring',n:'Fuente de vida',key:'t',icon:'⛲',unlock:36,cd:34,desc:'Cura a los héroes y a tus aliados invocados y da un pequeño escudo.'}
 ];
 /* Coste base de mejorar cada poder con oro (nivel 1 a 5): base*1.8^(nivel-1) */
-const SPBASE={nova:100,storm:140,skel:180,freeze:220,meteor:260,cloud:300,judge:340,hole:380,warp:420,barrier:460};
-const SPMAX=20;
+const SPBASE={nova:100,storm:140,skel:180,freeze:220,meteor:260,cloud:300,judge:340,hole:380,warp:420,barrier:460,quake:500,spring:540};
+const SPMAX=50;
+const lateK=l=>l<=20?1:1+.35*(l-20);   /* del nivel 20 al 50 el coste crece de forma lineal, no exponencial */
 /* Alcance base de cada habilidad (px a zoom 1). El cristal lo multiplica: +5% por nivel. */
-const RNG={arcane:380,fire:320,elec:240,smite:440,dark:260,spear:460,thorn:230,hail:360,tentacle:210,goldshot:400,
+const RNG={arcane:380,fire:320,elec:240,smite:440,dark:260,spear:460,thorn:230,hail:360,tentacle:210,goldshot:400,lightning:420,wind:440,
   m_missiles:380,m_fireballs:320,m_golems:300,m_nova:220,a_rain:440,n_mummy:300,n_curse:280,d_grenade:380,d_turret:320,
   z_meta:250,z_eyes:340,z_shadow:270,z_chaos:230,p_judge:400,p_consec:300,p_purge:240,k_dragon:200,k_hundred:180,pl_charge:320,pl_hammer:340};
 const rg=id=>(RNG[id]||300)*S.rk*(G&&G.skills&&id in G.skills?tf(id).rad:1);
-const SKMAX=20;
+const SKMAX=50;
 /* Factores de balance por habilidad / poder (1 = sin cambio). Calibrados para que todas tengan el mismo daño de referencia
    (media geométrica entre 1 jefe y una horda de 30 a nivel 20): las de área rinden más en grupo y las de un objetivo contra jefes. */
-const BAL={arcane:3.4,fire:.65,elec:4.9,smite:2.64,dark:2.73,spear:2.8,pulse:2.93,thorn:4.6,hail:3.73,orbit:.52,tentacle:2.51,goldshot:1.11};
-const SPBAL={nova:.6,storm:.35,skel:3,freeze:2,meteor:.2,cloud:.7,judge:1.1,hole:.4,warp:1,barrier:1};
+const BAL={arcane:3.4,fire:.65,elec:4.9,smite:2.64,dark:2.73,spear:2.8,pulse:2.93,thorn:4.6,hail:3.73,orbit:.52,tentacle:2.51,goldshot:1.11,lightning:2.7,wind:3.4};
+const SPBAL={nova:.6,storm:.35,skel:3,freeze:2,meteor:.2,cloud:.7,judge:1.1,hole:.4,warp:1,barrier:1,quake:.5,spring:1};
 /* Ultimates: se activan a partir del nivel 5 de cada habilidad y mejoran con cada nivel extra.
    perm = efecto permanente con probabilidad; cd = poder automático con enfriamiento (segundos) */
 const ULT_LVL=5;
@@ -393,7 +404,7 @@ const ULT={
  thorn:{n:'Enredadera',perm:true,d:'Probabilidad de enredar al enemigo al piso durante 3 s.'},
  hail:{n:'Congelación (provisional)',perm:true,d:'Probabilidad de congelar al enemigo 2 s.'},
 };
-const SKI={arcane:'✨',fire:'🔥',elec:'⚡',smite:'🌟',dark:'🌑',spear:'🔱',pulse:'💫',thorn:'🌵',hail:'🌨️',orbit:'☄️',tentacle:'🐙',goldshot:'🪙'};
+const SKI={arcane:'✨',fire:'🔥',elec:'⚡',smite:'🌟',dark:'🌑',spear:'🔱',pulse:'💫',thorn:'🌵',hail:'🌨️',orbit:'☄️',tentacle:'🐙',goldshot:'🪙',lightning:'🌩️',wind:'🌪️'};
 const ultU=l=>Math.max(0,l-ULT_LVL);
 const ULTCH={fire:[.10,.015],elec:[.06,.008],thorn:[.15,.02],hail:[.12,.015]};
 const ultChance=(id,l)=>Math.min(.6,ULTCH[id][0]+ULTCH[id][1]*ultU(l));   /* nivel máximo de las habilidades de nivel */
@@ -415,7 +426,7 @@ const HEROES={
  monk:{n:'Monje panda',icon:'🐼',hp:240,pw:2.6,col:'#ff9a3d',desc:'Panda maestro de kung-fu, luchador cuerpo a cuerpo: corre hacia los enemigos y los golpea con puñetazos muy rápidos, combos de palma, ola de chi, cien puños y la campana dorada que lo vuelve invulnerable.',melee:{spd:300,leash:220,reach:40},basic:{n:'Puño de chi',type:'phys',cd:.55,spd:1500,m:.95,col:'#ffcf7a'}},
  paladin:{n:'Paladín enano',icon:'🛡️',hp:200,pw:1.5,col:'#e8c35a',desc:'Enano sagrado cuerpo a cuerpo, barbudo y duro como la roca: avanza con martillo y escudo, carga contra los enemigos, los aturde con el martillo de la justicia y se protege con auras y curaciones.',melee:{spd:210,leash:210,reach:36},basic:{n:'Espada sagrada',type:'phys',cd:.8,spd:1500,m:1.6,col:'#fff2b0'}}
 };
-const CLSMAX=20;
+const CLSMAX=50;
 const clv=id=>(G&&G.cls&&G.cls[id])||0;
 const hpw=()=>(G&&HEROES[G.hero].pw)||1;
 const hdmg=l=>(10+3.5*l)*DMG_K*S.dmg*hpw();
@@ -514,7 +525,7 @@ const CLS={
   {id:'k_hundred',n:'Cien puños',icon:'💥',desc:'Golpeas en un instante a muchos enemigos a tu alcance, tres veces cada uno.',eff:l=>(6+Math.floor(l/2))+' enemigos x3 golpes · cada '+f1(Math.max(10,20-.5*l))+' s'}
  ]
 };
-const clsCost=id=>Math.round(90*Math.pow(1.3,clv(id)));
+const clsCost=id=>Math.round(90*Math.pow(1.3,Math.min(20,clv(id)))*lateK(clv(id)));
 function heroUp(id,mode){
   if(!G||G.modal||G.over)return false;
   const l=clv(id);if(l>=CLSMAX)return false;
@@ -534,8 +545,10 @@ function resize(){const r=$('#game').getBoundingClientRect();dpr=Math.min(window
 window.addEventListener('resize',resize);
 let best=0;try{best=+localStorage.getItem('mago_best')||0}catch(e){}
 
-function newGame(hero){
-  const nick=G&&G.nick,hero0=hero||(G&&G.hero)||'mage';
+function newGame(hero,hero2){
+  HCUR=0;
+  const nick=G&&G.nick,hero0=hero||(G&&G.heroes&&G.heroes[0])||(G&&G.hero)||'mage';
+  const heroB=hero2||(G&&G.heroes&&G.heroes[1])||(hero0==='archer'?'mage':'archer');
   G={t:0,enemies:[],projs:[],texts:[],fx:[],dying:[],hp:100,gold:0,xp:0,lvl:1,kills:0,bonus:0,
      autoUpgrades:[],autoUpgradeTimer:0,skills:{},cd:{},items:{},pending:1,tpending:1,modal:null,over:false,paused:false,speed:1,
      spawnAcc:0,nextBoss:45,nextWave:50,allies:[],shield:0,dmgBy:{},spCd:{},spLv:{},nick:nick||'',
@@ -546,10 +559,14 @@ function newGame(hero){
   for(const i of ITEMS)G.items[i.id]=0;
   for(const sp of SPS){G.spCd[sp.id]=0;G.spLv[sp.id]=1}
   G.zones=[];G.delayed=[];G.haste=0;G.eshots=[];
-  G.tower={lvl:1,xp:0,cd:.5,shotAt:-9,aim:0};G.org=null;G.orgN=0;
+  G.tower={lvl:1,xp:0,cd:.5,shotAt:-9,aim:0,hp:300+75,dead:false};G.org=null;G.orgN=0;
   G.hero=hero0;G.cls={};for(const a of CLS[hero0])G.cls[a.id]=0;
   G.ht={};G.walls=null;G.mines=[];G.turrets=[];G.sdrags=[];G.aim=0;
-  recalc();G.hp=S.maxHp;
+  /* dos héroes: el A usa el estado normal de G; el B vive en G.hs y se intercambia con heroCtx(1,...) */
+  G.heroes=[hero0,heroB];G.hoff=-48;
+  G.hs={hero:heroB,ht:{},bx:0,by:0,mv:0,basicCd:0,punchAt:-9,dash:null,aim:0,walls:null,mines:[],turrets:[],sdrags:[],pending:1,hoff:48,hp:1,shield:0,dead:false,deadT:0,tomb:null,mhp:1};
+  for(const a of CLS[heroB])G.cls[a.id]=0;
+  recalc();G.hp=S.maxHp;G.hs.hp=G.hs.mhp;
   $('#overlay').style.display='none';
   buildHeroMenu();
   refreshAll();
@@ -559,12 +576,12 @@ function recalc(){
   S.dmg=(1+.12*it.staff)*(1+.1*G.bonus)*rampMult(G.lvl);
   S.atk=(1+.05*it.ring)*(1+.025*clv('m_med'))*(clv('m_med')?tf('m_med').atk:1);
   S.rk=1+.05*it.crystal;S.range=300*S.rk;
-  S.maxHp=Math.round((HEROES[G.hero].hp+25+8*(G.lvl-1)+25*it.robe)*(1+.04*clv('d_armor')));
-  if(G.hero==='devourer')S.maxHp=Math.round(S.maxHp*(1+.012*clv('pb_colossal'))*tf('pb_colossal').hpm);
+  /* cada héroe tiene su propia vida máxima */
+  S.maxHp=G.mhp=hpMax(G.hero);if(G.hs)G.hs.mhp=hpMax(G.hs.hero);
   S.regen=1.5+.6*it.amulet+.6*clv('m_med')+.3*clv('k_serene')+.25*clv('pl_aura')+.5*(clv('t_regen')?0:0)+.3*clv('w_hide')+.35*clv('u_rejuv');
   S.xpM=1+.07*it.hat;
   S.goldM=1+.07*it.purse;
-  S.crit=Math.min(.6,.01*it.luck);S.critM=.04*it.luck;S.allyK=1+.06*it.banner;S.durK=1+.03*it.hourglass;
+  S.crit=Math.min(.6,.01*it.luck);S.critM=.04*it.luck;S.allyK=1+.06*it.banner;S.durK=1;
   S.def=itemShieldFactor(it.shield)*(1-.012*clv('d_armor'))*(1-.012*clv('p_barrier'))*(1-.01*clv('k_serene'))*(1-.015*clv('pl_shield'))*(1-.014*clv('w_hide'))*(1-.012*clv('u_bark'));
   S.dodge=Math.max(clv('a_dodge')?Math.min(.25,.03+.011*clv('a_dodge')):0,clv('z_evade')?Math.min(.3,.05+.013*clv('z_evade')):0,clv('k_wind')?Math.min(.3,.04+.013*clv('k_wind')):0,clv('pl_shield')?Math.min(.25,.03+.011*clv('pl_shield')):0);
   if(clv('a_dodge'))S.dodge=Math.min(.6,S.dodge+tf('a_dodge').dodge);
@@ -572,10 +589,15 @@ function recalc(){
   if(clv('k_wind'))S.dodge=Math.min(.6,S.dodge+tf('k_wind').dodge);
   if(clv('pl_shield'))S.dodge=Math.min(.6,S.dodge+tf('pl_shield').dodge);
   S.dodge=Math.min(.6,S.dodge+Math.min(.25,.005*it.talisman));
-  if(clv('d_armor'))S.maxHp=Math.round(S.maxHp*tf('d_armor').hpm);
+}
+function hpMax(h){
+  let v=Math.round((HEROES[h].hp+25+8*(G.lvl-1)+25*G.items.robe)*(h==='dwarf'?1+.04*clv('d_armor'):1));
+  if(h==='devourer')v=Math.round(v*(1+.012*clv('pb_colossal'))*tf('pb_colossal').hpm);
+  if(h==='dwarf'&&clv('d_armor'))v=Math.round(v*tf('d_armor').hpm);
+  return v;
 }
 const hx=()=>W/2, hy=()=>H/2;   /* centro de la cámara */
-const cx=()=>W/2+(G&&G.bx||0), cy=()=>H/2+(G&&G.by||0);   /* posición del héroe (los luchadores cuerpo a cuerpo se mueven) */
+const cx=()=>W/2+(G&&G.hoff||0)+(G&&G.bx||0), cy=()=>H/2+(G&&G.by||0);   /* posición del héroe (los luchadores cuerpo a cuerpo se mueven) */
 const ax=()=>G.org?G.org.x:cx(), ay=()=>G.org?G.org.y:cy(); /* origen de lanzamiento independiente del héroe */
 const resOf=(e,t)=>e.res[t]??1;
 const mult=(e,t)=>e.invT>0?0:resOf(e,t)*(t==='elec'&&e.wetUntil>G.t?1.15:1)*(t==='magic'&&e.dissonanceUntil>G.t?1+(e.dissonancePower||0):1);
@@ -611,8 +633,18 @@ function spawnEnemy(boss,def,o){
   e.rng=rng;e.shotCd=rng?rng.cd*Math.random():0;
   {const k=1/cntF(G.t);e.hp*=k;e.dmg*=Math.sqrt(k);e.xp*=k;e.gold*=k;e.r*=Math.min(1.5,Math.pow(k,.2))}
   if(o.hpAbs){e.hp=o.hpAbs;e.dmg=o.dmg;e.sp=o.sp;e.r=o.r;e.xp=o.xp;e.gold=o.gold}
+  if(!boss&&!o.hpAbs&&!o.gen&&eT(G.t)>240&&Math.random()<Math.min(.3,.04+(eT(G.t)-240)/2400)){
+    const af=ELITE[Math.floor(Math.random()*ELITE.length)];af.f(e);
+    e.n='Élite '+af.n+' '+e.n;e.elite=true;e.xp*=2;e.gold*=2;
+  }
   e.max=e.hp;G.enemies.push(e);
 }
+const ELITE=[
+ {n:'veloz',f:e=>{e.sp*=1.45}},
+ {n:'blindado',f:e=>{e.hp*=1.6;e.res={...e.res};for(const k in TYPES)e.res[k]=(e.res[k]??1)*.75}},
+ {n:'brutal',f:e=>{e.dmg*=1.8;e.r*=1.15}},
+ {n:'regenerador',f:e=>{e.regen=Math.max(e.regen||0,.035);e.hp*=1.2}}
+];
 /* Oleada numerosa: muchos enemigos de un mismo tipo llegando desde el mismo lado */
 function spawnWave(){
   const pool=EN.filter(d=>d.from*1.6<=eT(G.t)),d=pool[Math.floor(Math.random()*pool.length)];
@@ -632,7 +664,7 @@ function kill(e){
     return;
   }
   e.dead=true;G.kills++;foeDie(e);
-  if(G.items.fang)G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.0004*G.items.fang);
+  if(G.items.fang)eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.0004*G.items.fang)});
   G.gold+=Math.ceil(e.gold*GOLDK*(1+G.t/120)*S.goldM);
   gainXp(e.xp*XPK*(1+G.t/100)*S.xpM);towerKillXp(e);
   if(G.dragon)dragonXp(e.xp*XPK*(1+G.t/100)*.7);
@@ -654,8 +686,8 @@ function gainXp(a){
   G.xp+=a;
   while(G.xp>=need()){
     G.xp-=need();G.lvl++;
-    if(CLS[G.hero].every(a=>clv(a.id)>=CLSMAX)){G.bonus++;txt(cx(),cy()-70,'Todo al máximo: +10% daño','#ffd24a',16)}else G.pending++;
-    recalc();G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.2);
+    for(const i of [0,1])heroCtx(i,()=>{if(CLS[G.hero].every(a=>clv(a.id)>=CLSMAX)){G.bonus++;txt(cx(),cy()-70,'Todo al máximo: +10% daño','#ffd24a',16)}else G.pending++});
+    recalc();eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.2)});
     txt(cx(),cy()-50,'¡Nivel '+G.lvl+'!','#ffffff',22);
   }
 }
@@ -863,7 +895,7 @@ function updateUlts(dt){
 
 /* ============ BOLAS ORBITALES Y PULPO VAMPÍRICO ============ */
 const goldMult=l=>1+Math.min(1.5+.15*(l-6),G.gold/1000*(.5+.05*(l-6)));
-const orbitInfo=l=>({n:Math.min(5,l)+tf('orbit').cnt,r:(7+.6*l)*tf('orbit').rad,rad:46+l,sp:2+.12*l});
+const orbitInfo=l=>({n:Math.min(5,l)+tf('orbit').cnt,r:(7+.6*l)*tf('orbit').rad,rad:130+4*l,sp:2+.12*l});
 const tentacleCount=l=>Math.min(8,1+Math.floor((l-1)/2))+tf('tentacle').cnt;
 function updateOrbit(dt){
   const l=G.skills.orbit;if(!l)return;
@@ -932,7 +964,7 @@ function drawOrbitTent(x0,y0,orbA=G.orbA){
 }
 
 /* ============ DRAGÓN ============ */
-const DRMAX=20,DRULT=10,EGG_COST=150,EGG_TIME=40,DRB=.7;
+const DRMAX=50,DRULT=10,EGG_COST=150,EGG_TIME=40,DRB=.7;
 /* u = ultimate: se activa cuando la habilidad llega al nivel DRULT */
 const DRSK=[
  {id:'crit',n:'Golpe crítico',icon:'💥',base:60,d:l=>l?'Prob. '+Math.round(100*Math.min(.6,.08+.03*l))+'% · daño x'+(2.5+.15*l).toFixed(2):'Sin desbloquear',u:{n:'Golpe devastador',d:'Los críticos explotan y hacen la mitad de su daño a los enemigos cercanos.'}},
@@ -947,7 +979,7 @@ const DRSK=[
  {id:'scales',n:'Escamas de dragón',icon:'🛡️',base:80,d:l=>l?'-'+Math.round(100*Math.min(.6,.03*l))+'% daño recibido · espinas '+(5*l)+'% de su daño':'Sin desbloquear',u:{n:'Escamas de diamante',d:'Si su vida baja del 30%, el dragón es invulnerable 3 s (cada 30 s).'}}
 ];
 const drU=id=>G.dr.sk[id]>=DRULT;
-const drCost=id=>Math.round(DRSK.find(x=>x.id===id).base*Math.pow(1.3,G.dr.sk[id]));
+const drCost=id=>Math.round(DRSK.find(x=>x.id===id).base*Math.pow(1.3,Math.min(20,G.dr.sk[id]))*lateK(G.dr.sk[id]));
 const drNeed=()=>Math.round(14*Math.pow(1.2,G.dr.lvl-1));
 function dragonStats(){
   const L=G.dr.lvl,k=G.dr.sk,tm=1+.08*G.items.tome;
@@ -1099,7 +1131,7 @@ function updateDragon(dt){
       dealDamage(tgt,d0,'phys');
       if(crit)txt(tx,ty-tgt.r-16,'¡CRÍTICO!','#ff4040',16);
       if(crit&&drU('crit')){for(const o of G.enemies)if(!o.dead&&o!==tgt&&(o.x-tx)**2+(o.y-ty)**2<=(60+o.r)**2)dealDamage(o,d0*.5,'phys');G.fx.push({k:'ring',x:tx,y:ty,r:60,t:.3,c:'#ff4040'})}
-      if(st.ls&&eff>0){dg.hp=Math.min(dg.max,dg.hp+eff*st.ls);if(drU('life'))G.hp=Math.min(S.maxHp,G.hp+eff*st.ls*.5)}
+      if(st.ls&&eff>0){dg.hp=Math.min(dg.max,dg.hp+eff*st.ls);if(drU('life'))eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+eff*st.ls*.5)})}
       if(st.stun&&Math.random()<st.stun){
         if(!tgt.dead){tgt.stun=st.stunT;txt(tx,ty-tgt.r-12,'💫','#fff',14)}
         if(drU('stun')){for(const o of G.enemies)if(!o.dead&&o!==tgt&&(o.x-tx)**2+(o.y-ty)**2<=(80+o.r)**2)o.stun=Math.max(o.stun||0,st.stunT);G.fx.push({k:'ring',x:tx,y:ty,r:80,t:.3,c:'#ffffff'})}
@@ -1338,9 +1370,11 @@ function autoOk(id){
     case'freeze':return countNear(ax(),ay(),S.range)>=6;
     case'meteor':return countNear(ax(),ay(),S.range)>=3;
     case'cloud':return countNear(ax(),ay(),S.range)>=4;
-    case'judge':{const n=countNear(ax(),ay(),S.range);return n>=5||(G.hp<S.maxHp*.5&&n>=2)}
+    case'judge':{const n=countNear(ax(),ay(),S.range);return n>=5||(lowFrac()<.5&&n>=2)}
     case'hole':return countNear(ax(),ay(),S.range)>=5;
-    case'barrier':return G.hp<S.maxHp*.7&&G.shield<S.maxHp*.2||countNear(ax(),ay(),S.range*tf(id).rad)>=4;
+    case'quake':return countNear(ax(),ay(),S.range)>=4;
+    case'spring':return lowFrac()<.6;
+    case'barrier':return lowFrac()<.7||countNear(ax(),ay(),S.range*tf(id).rad)>=4;
     case'warp':return countNear(ax(),ay(),S.range)>=8||G.enemies.some(e=>e.boss&&Math.hypot(e.x-ax(),e.y-ay())<S.range);
   }
   return false;
@@ -1406,7 +1440,7 @@ function castSpecial(id){
   }else if(id==='judge'){
     const dmg=(50+8*L)*sd;
     for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>range)continue;dealDamage(e,dmg,'divine')}
-    G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.12+.004*(lv-1))*f.hm);
+    eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.12+.004*(lv-1))*f.hm)});
     G.fx.push({k:'ring',x:x0,y:y0,r:range,t:.3,c:TYPES.divine.c});
     G.fx.push({k:'ring',x:x0,y:y0,r:range*.6,t:.3,c:'#ffffff'});
     G.fx.push({k:'beam',x:x0,y:y0,t:.3,c:TYPES.divine.c});
@@ -1414,7 +1448,7 @@ function castSpecial(id){
     const sp=bestSpot(110*S.rk*f.rad,range+40);
     G.zones.push({kind:'hole',x:sp.x,y:sp.y,r:(110+2*(lv-1))*S.rk*f.rad,t:(4+.15*(lv-1))*duration,dps:(45+7*L)*sd,type:'dark',tk:0,src:SRC});
   }else if(id==='barrier'){
-    G.shield=Math.max(G.shield,S.maxHp*(.2+.01*(lv-1))*f.shm);
+    eachHero(()=>{G.shield=Math.max(G.shield,S.maxHp*(.2+.01*(lv-1))*f.shm)});
     const R=(190+2*lv)*S.rk*f.rad,dmg=(45+7*L)*sd;
     for(const e of G.enemies){
       if(e.dead||Math.hypot(e.x-x0,e.y-y0)>R+e.r)continue;
@@ -1422,6 +1456,20 @@ function castSpecial(id){
     }
     G.fx.push({k:'pulse',x:x0,y:y0,r:R,t:.6,T:.6,c:'#7fffd4'});
     txt(cx(),cy()-60,'¡Barrera rúnica!','#7fffd4',18);
+  }else if(id==='quake'){
+    const R=(160+3*(lv-1))*S.rk*f.rad,dmg=(55+9*L)*sd;
+    for(const e of G.enemies){
+      if(e.dead||Math.hypot(e.x-x0,e.y-y0)>R+e.r)continue;
+      dealDamage(e,dmg,'phys');
+      if(!e.dead&&mult(e,'phys')>0)e.stun=Math.max(e.stun||0,(1.2+.03*(lv-1))*duration);
+    }
+    G.fx.push({k:'ring',x:x0,y:y0,r:R,t:.35,c:'#c8a060'});G.fx.push({k:'pulse',x:x0,y:y0,r:R*.7,t:.5,T:.5,c:'#a07a40'});
+    txt(x0,y0-60,'¡Terremoto!','#c8a060',18);
+  }else if(id==='spring'){
+    eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.18+.004*(lv-1))*f.hm);G.shield=Math.max(G.shield,S.maxHp*(.08+.004*(lv-1))*f.shm)});
+    for(const a of G.allies)a.hp=Math.min(a.max,a.hp+a.max*(.3+.01*(lv-1))*f.hm);
+    G.fx.push({k:'ring',x:x0,y:y0,r:90,t:.4,c:'#7be07b'});G.fx.push({k:'pulse',x:x0,y:y0,r:120,t:.6,T:.6,c:'#9fffa0'});
+    txt(x0,y0-60,'⛲ ¡Fuente de vida!','#9fffa0',18);
   }else if(id==='warp'){
     G.haste=(6+.25*(lv-1))*duration;
     for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>range)continue;e.slow={a:.85,t:(5+.25*(lv-1))*duration}}
@@ -1462,6 +1510,7 @@ function updateZones(dt){
   if(G.haste>0)G.haste-=dt;
 }
 function useSpecial(id,index=0){
+  {const u=syncTowers()[index];if(u&&u.dead)return}
   const sp=SPS.find(s=>s.id===id);
   if(!sp||tLvl()<sp.unlock||G.spCd[id]>0||G.over||G.modal||G.paused)return;
   SRC=sp.n;towerBegin(index);castSpecial(id);towerEnd();G.spCd[id]=powerCooldown(id);
@@ -1502,7 +1551,7 @@ function updateAllies(dt){
         a.cd=k.rate/bardAllySpeed(a);a.atkAt=G.t;a.tx=t.x;a.ty=t.y;
         const base=(a.dmgAbs!=null?a.dmgAbs:(18+4*L)*S.dmg*(a.dmgK||1))*(a.scaleT?tsc()/a.tsAt:1);
         dealDamage(t,base,k.type||(a.kind==='vamp'?'dark':'phys'));
-        if(a.kind==='vamp')G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.004+.0003*clv('n_vamp'))*tf('n_vamp').hm);
+        if(a.kind==='vamp')eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.004+.0003*clv('n_vamp'))*tf('n_vamp').hm)});
       }
     }else{
       const dx=tx-a.x,dy=ty-a.y,d=Math.hypot(dx,dy);
@@ -1628,15 +1677,15 @@ function updateMelee(dt){
   const ox=G.bx,oy=G.by,px=cx(),py=cy();
   let tx=0,ty=0,sp=m.spd*(G.haste>0?1.3:1)*(1+.01*clv('k_wind'))*(G.hero==='devourer'?(1+.01*clv('pb_momentum'))*tf('pb_momentum').atk:1),lim=m.leash;
   if(G.dash){
-    G.dash.t-=dt;tx=G.dash.x-hx();ty=G.dash.y-hy();sp=1500;lim=m.leash+120;
+    G.dash.t-=dt;tx=G.dash.x-hx()-(G.hoff||0);ty=G.dash.y-hy();sp=1500;lim=m.leash+120;
     if(G.dash.t<=0||Math.hypot(tx-G.bx,ty-G.by)<8){const d=G.dash;G.dash=null;d.fn&&d.fn()}
   }else{
     let t=null,bd=1e12;
     for(const e of G.enemies){
-      if(e.dead||Math.hypot(e.x-hx(),e.y-hy())>m.leash+60)continue;
+      if(e.dead||Math.hypot(e.x-hx()-(G.hoff||0),e.y-hy())>m.leash+60)continue;
       const dd=(e.x-px)**2+(e.y-py)**2;if(dd<bd){bd=dd;t=e}
     }
-    if(t){const a=Math.atan2(t.y-py,t.x-px),st=t.r+m.reach*.6;tx=t.x-Math.cos(a)*st-hx();ty=t.y-Math.sin(a)*st-hy();if(G.t-G.punchAt>.4)G.aim=a}
+    if(t){const a=Math.atan2(t.y-py,t.x-px),st=t.r+m.reach*.6;tx=t.x-Math.cos(a)*st-hx()-(G.hoff||0);ty=t.y-Math.sin(a)*st-hy();if(G.t-G.punchAt>.4)G.aim=a}
   }
   const dx=tx-G.bx,dy=ty-G.by,dl=Math.hypot(dx,dy);
   if(dl>1){const k=Math.min(dl,sp*dt)/dl;G.bx+=dx*k;G.by+=dy*k}
@@ -2165,7 +2214,7 @@ function updateHero(dt){
 function rangedAct(e,dist,dt,sp){
   const r=e.rng;if(!r)return false;
   const tn=taunter(e);
-  const tx=tn?tn.x:cx(),ty=tn?tn.y:cy();
+  const tx=tn?tn.x:(e._tx!=null?e._tx:cx()),ty=tn?tn.y:(e._ty!=null?e._ty:cy());
   const dx=tx-e.x,dy=ty-e.y,d=Math.hypot(dx,dy)||1;
   if(d<=r.range){
     e.shotCd-=dt;
@@ -2200,7 +2249,9 @@ function updateEShots(dt){
     }
     if(!hit)for(const u of tl){if(u.hp<=0||u.inv)continue;if((u.x-sh.x)**2+(u.y-sh.y)**2<=(u.r+sh.r)**2){u.hp-=sh.dmg*.8*(u.dk||1);hit=true;break}}
     if(!hit)for(const a of G.allies){if(a.fly)continue;if((a.x-sh.x)**2+(a.y-sh.y)**2<=(a.r+sh.r+3)**2){a.hp-=sh.dmg*.8;hit=true;break}}
-    if(!hit&&dm<=20+sh.r){hurt(sh.dmg*S.def);hit=true}
+    if(!hit&&!G.dead&&dm<=20+sh.r){G.tgtHero=0;hurt(sh.dmg*S.def);hit=true}
+    if(!hit){const st=syncTowers();for(let i=0;i<st.length;i++){if(st[i].dead)continue;if(Math.hypot(sh.x-towX(i),sh.y-towY(i))<TOWER_R+sh.r){hurtTower(i,sh.dmg*TOWER_DMG);hit=true;break}}}
+    if(!hit&&G.hs&&!G.hs.dead){const pB=heroPos(1);if(Math.hypot(sh.x-pB.x,sh.y-pB.y)<=20+sh.r){G.tgtHero=1;hurt(sh.dmg*S.def);hit=true}}
     if(hit){sh.dead=true;G.fx.push({k:'p',x:sh.x,y:sh.y,vx:(Math.random()-.5)*100,vy:(Math.random()-.5)*100,t:.3,c:sh.col})}
   }
   G.eshots=G.eshots.filter(q=>!q.dead);
@@ -2216,29 +2267,30 @@ function update(dt){
   G.t+=dt;
   updateAutoUpgrades(dt);
   // regeneración
-  G.hp=Math.min(S.maxHp,G.hp+S.regen*dt);
+  eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.regen*dt)});
+  for(const o of aliveTowers()){const mx=towerMax();if(o.u.hp==null)o.u.hp=mx;o.u.hp=Math.min(mx,o.u.hp+mx*.004*dt)}
   // spawns
   const rate=spawnRate(G.t);
   G.spawnAcc+=rate*dt;
   while(G.spawnAcc>=1){G.spawnAcc--;if(G.enemies.length<(LOWQ?110:160))spawnEnemy(false)}
   if(G.t>=G.nextWave){G.nextWave+=Math.max(30,55-eT(G.t)/60*2);spawnWave()}
   if(G.t>=G.nextBoss){G.nextBoss+=45;spawnEnemy(true);txt(cx(),cy()-80,'¡Llega un jefe!','#ff5a5a',22)}
-  updateMelee(dt);
-  if(G.basicCd-dt<=0)fireBasic();else G.basicCd-=dt;
+  for(const i of [0,1])heroCtx(i,()=>{if(G.dead){G.deadT-=dt;if(G.deadT<=0)heroRevive();return}updateMelee(dt);if(G.basicCd-dt<=0)fireBasic();else G.basicCd-=dt});
   // torre del mago: ataque básico, habilidades comunes y poderes salen de la torre
   towerBegin();
   towerBasic(dt);
   towerEnd();
   /* Bolas de fuego orbitales: giran alrededor del héroe (sin origen de torre) */
-  G.orbOff=0;updateOrbit(dt);
+  G.orbOff=0;{const m=midPos();G.org={x:m.x,y:m.y};updateOrbit(dt);G.org=null}
   /* Resto de habilidades, ultimates y poderes: las lanza CADA torre con sus propios enfriamientos */
   {const sts=syncTowers();for(let i=0;i<sts.length;i++)towerAbilities(i,sts[i],dt)}
   updateDragon(dt);
-  updateSkelDragons(dt);
-  updateHero(dt);
+  for(const i of [0,1])heroCtx(i,()=>{if(G.dead)return;updateSkelDragons(dt);updateHero(dt)});
   updateZones(dt);
   // enemigos
-  const mx=cx(),my=cy();let tn=null;G._tl=G.dragon?[G.dragon,...G.sdrags]:G.sdrags;
+  const mx=cx(),my=cy(),pB=heroPos(1),mxB=pB.x,myB=pB.y;let tn=null;
+  const TWR=aliveTowers().map(o=>({i:o.i,x:towX(o.i),y:towY(o.i)}));
+  const AUR=G.enemies.filter(o=>!o.dead&&o.d&&o.d.aura);G._tl=[...(G.dragon?[G.dragon]:[]),...G.sdrags,...(G.hs?G.hs.sdrags:[])];
   for(const e of G.enemies){
     if(e.dead)continue;
     if(e.invT>0)e.invT-=dt;
@@ -2266,14 +2318,20 @@ function update(dt){
     if(e.slow){e.slow.t-=dt;if(e.slow.t<=0)e.slow=null;else sp*=1-e.slow.a}
     e.flash=Math.max(0,e.flash-dt);
     if(e.stun>0)e.stun-=dt;if(e.root>0)e.root-=dt;if(e.rep>0)e.rep-=dt;
-    const dx=mx-e.x,dy=my-e.y,dist=Math.hypot(dx,dy);
+    let tgx=mx,tgy=my,tIdx=-1,tgtB=false,bestD=1e12;
+    if(!G.dead)bestD=Math.hypot(mx-e.x,my-e.y);
+    if(G.hs&&!G.hs.dead){const d=Math.hypot(mxB-e.x,myB-e.y);if(d<bestD){bestD=d;tgx=mxB;tgy=myB;tgtB=true}}
+    for(const t of TWR){const d=Math.hypot(t.x-e.x,t.y-e.y)-TOWER_R-(e.d&&e.d.siege?600:0);if(d<bestD){bestD=d;tgx=t.x;tgy=t.y;tIdx=t.i;tgtB=false}}
+    G.tgtHero=tgtB?1:0;e._tx=tgx;e._ty=tgy;
+    const dx=tgx-e.x,dy=tgy-e.y,dist=Math.hypot(dx,dy),distA=Math.hypot(mx-e.x,my-e.y);
+    let dmK=1;if(AUR.length&&!(e.d&&e.d.aura)){for(const a of AUR){if(Math.hypot(a.x-e.x,a.y-e.y)<a.d.aura.r){sp*=1+a.d.aura.sp;dmK=1+a.d.aura.dm;break}}}
     let ally=null,ad=1e9,tA=null,td=1e9;
     for(const a of G.allies){if(a.fly)continue;const dd=Math.hypot(a.x-e.x,a.y-e.y);if(dd<ad){ad=dd;ally=a}if(a.taunt&&dd<a.taunt&&dd<td){td=dd;tA=a}}
     if(e.stun>0){}
     else if(e.charm>G.t){charmAct(e,dt,sp)}
     else if(e.rep>0){if(dist>1){e.x-=dx/dist*sp*1.4*dt;e.y-=dy/dist*sp*1.4*dt}}
-    else if(e.rng&&rangedAct(e,dist,dt,sp)){}
-    else if(wallHit(e,dist,dt)){}
+    else if(e.rng&&rangedAct(e,distA,dt,sp)){}
+    else if(wallHit(e,distA,dt)){}
     else if((tn=taunter(e))){
       const ddx=tn.x-e.x,ddy=tn.y-e.y,dd=Math.hypot(ddx,ddy);
       if(dd>e.r+tn.r){if(!(e.root>0)){e.x+=ddx/dd*sp*dt;e.y+=ddy/dd*sp*dt}}
@@ -2281,8 +2339,13 @@ function update(dt){
     }
     else if(tA&&dist>e.r+30){const ddx=tA.x-e.x,ddy=tA.y-e.y,dd=Math.hypot(ddx,ddy)||1;if(dd>e.r+tA.r+2){if(!(e.root>0)){e.x+=ddx/dd*sp*dt;e.y+=ddy/dd*sp*dt}}else tA.hp-=e.dmg*dt*(tA.dk||1)}
     else if(ally&&ad<e.r+16&&ad<dist)ally.hp-=e.dmg*dt*(ally.dk||1);
-    else if(dist>e.r+20){if(!(e.root>0)){e.x+=dx/dist*sp*dt;e.y+=dy/dist*sp*dt}}
-    else hurt(e.dmg*S.def*dt*(e.vt>G.t?.85:1));
+    else if(dist>e.r+(tIdx>=0?TOWER_R+2:20)){if(!(e.root>0)){e.x+=dx/dist*sp*dt;e.y+=dy/dist*sp*dt}}
+    else if(e.d&&e.d.bomb){
+      const dm=e.dmg*dmK*14;if(tIdx>=0)hurtTower(tIdx,dm*TOWER_DMG);else hurt(dm*S.def);
+      e.dead=true;G.fx.push({k:'ring',x:e.x,y:e.y,r:46,t:.35,c:'#ff8a3a'});txt(e.x,e.y-16,'💥','#ff8a3a',16);
+    }
+    else if(tIdx>=0)hurtTower(tIdx,e.dmg*dmK*((e.d&&e.d.siege)||1)*TOWER_DMG*dt);
+    else hurt(e.dmg*dmK*S.def*dt*(e.vt>G.t?.85:1));
   }
   G.enemies=G.enemies.filter(e=>!e.dead);
   updateAllies(dt);
@@ -2319,12 +2382,16 @@ function update(dt){
   for(const t of G.texts){t.t-=dt;t.y-=28*dt}
   G.texts=G.texts.filter(t=>t.t>0);
   // muerte
-  if(G.heroInv>0)G.heroInv-=dt;
+  for(const i of [0,1])heroCtx(i,()=>{if(G.heroInv>0)G.heroInv-=dt});
+  for(const i of [0,1])heroCtx(i,()=>{
+  if(G.dead)return;
   if(G.hp<=0&&G.hero==='priest'&&clv('p_res')&&!(G.ht.resCd>0)){
     const l=clv('p_res'),fre=tf('p_res');G.hp=Math.min(S.maxHp,S.maxHp*(.30+.02*l)*fre.hm);G.heroInv=2*fre.dur;G.ht.resCd=Math.max(60,150-4*l)*fre.cd;tierCast('p_res',fre,cx(),cy());
     G.fx.push({k:'ring',x:cx(),y:cy(),r:120,t:.5,c:'#ffe27a'});txt(cx(),cy()-80,'🔆 ¡Resurrección!','#ffe27a',22);
   }
-  if(G.hp<=0)gameOver();
+  if(G.hp<=0)heroDie();
+  });
+
 }
 
 function drawGlaive(p){
@@ -3196,7 +3263,7 @@ CLS.alchemist=[
  {id:'al_transmute',n:'★ Gran transmutación (ULTIMATE)',icon:'🌟',desc:'Consume hasta 8 charcos y provoca una explosión en cada uno. Las explosiones no crean charcos ni activan nuevas reacciones.',eff:l=>'Radio '+(110+2*l)+' · daño x2,8 por charco · cada '+f1(Math.max(35,65-1.3*l))+' s'}
 ];
 
-const TIER_LV=[5,10,15,20];
+const TIER_LV=[10,20,30,40];
 const TIERS={};
 const TIERNAME={};
 const SRCMAP={};
@@ -3251,7 +3318,7 @@ function tierCast(id,f,x0,y0){
 }
 function tierRecalc(){
   let def=1,reg=0;
-  for(const a of CLS[G.hero]){const f=tf(a.id);def*=f.def;reg+=f.reg}
+  for(const hid of (G.heroes||[G.hero]))for(const a of CLS[hid]){const f=tf(a.id);def*=f.def;reg+=f.reg}
   G.tdef=def;G.trg=reg;G.tdv=G.tv||0;
 }
 function tierHtml(id){
@@ -3274,6 +3341,8 @@ defTiers('freeze','Ventisca',[['Frío intenso','+40% de daño.',{dm:1.4}],['Invi
 defTiers('meteor','Lluvia de meteoros',[['Doble impacto','+2 meteoros.',{cnt:2}],['Cráteres amplios','+30% de alcance y radio de impacto.',{rad:1.3}],['Lluvia frecuente','-20% de enfriamiento y +30% de daño.',{cd:.8,dm:1.3}],['Cataclismo','+3 meteoros y +50% de daño.',{cnt:3,dm:1.5}]]);
 defTiers('cloud','Nube tóxica',[['Miasma extenso','+30% de alcance y radio.',{rad:1.3}],['Veneno denso','+40% de daño.',{dm:1.4}],['Nube persistente','+50% de duración.',{dur:1.5}],['Plaga tóxica','+50% de daño y -25% de enfriamiento.',{dm:1.5,cd:.75}]]);
 defTiers('judge','Juicio divino',[['Luz intensa','+35% de daño.',{dm:1.35}],['Gracia divina','+50% de curación.',{hm:1.5}],['Juicio amplio','+30% de alcance y -20% de enfriamiento.',{rad:1.3,cd:.8}],['Absolución','+50% de daño y +30% de curación.',{dm:1.5,hm:1.3}]]);
+defTiers('quake','Terremoto',[['Sacudida amplia','+25% de radio.',{rad:1.25}],['Réplica','+35% de daño.',{dm:1.35}],['Suelo roto','+50% de duración del aturdimiento.',{dur:1.5}],['Cataclismo','+50% de daño y -25% de enfriamiento.',{dm:1.5,cd:.75}]]);
+defTiers('spring','Fuente de vida',[['Aguas puras','+30% de curación.',{hm:1.3}],['Escudo de agua','+50% de escudo.',{shm:1.5}],['Manantial','-20% de enfriamiento.',{cd:.8}],['Fuente eterna','+40% de curación y -20% de enfriamiento.',{hm:1.4,cd:.8}]]);
 defTiers('hole','Agujero negro',[['Horizonte amplio','+30% de alcance y radio.',{rad:1.3}],['Singularidad densa','+40% de daño.',{dm:1.4}],['Vacío persistente','+50% de duración.',{dur:1.5}],['Colapso astral','+60% de daño y -25% de enfriamiento.',{dm:1.6,cd:.75}]]);
 defTiers('warp','Distorsión temporal',[['Tiempo dilatado','+30% de duración de la prisa y ralentización.',{dur:1.3}],['Campo temporal','+30% de alcance.',{rad:1.3}],['Bucle temporal','-25% de enfriamiento.',{cd:.75}],['Eternidad','+50% de duración y -20% de enfriamiento.',{dur:1.5,cd:.8}]]);
 defTiers('barrier','Barrera rúnica',[['Runas reforzadas','+40% de escudo.',{shm:1.4}],['Onda protectora','+30% de radio y +35% de daño.',{rad:1.3,dm:1.35}],['Sellos persistentes','+50% de duración de la ralentización y -20% de enfriamiento.',{dur:1.5,cd:.8}],['Bastión arcano','+50% de escudo y +50% de daño.',{shm:1.5,dm:1.5}]]);
@@ -3288,6 +3357,8 @@ defTiers('thorn','Espinas venenosas',[['Maleza extensa','+15% de radio y alcance
 defTiers('hail','Granizo',[['Nube extensa','+15% de radio y alcance.',{rad:1.15}],['Hielo pesado','+20% de daño.',{dm:1.2}],['Nube gemela','+1 zona de granizo por lanzamiento.',{cnt:1}],['Ventisca','+20% de daño y -15% de enfriamiento.',{dm:1.2,cd:.85}]]);
 defTiers('orbit','Bolas de fuego orbitales',[['Satélite extra','+1 bola orbital sobre el límite base.',{cnt:1}],['Sol ardiente','+20% de daño de impacto y quemadura.',{dm:1.2}],['Corona extensa','+20% de tamaño de las bolas.',{rad:1.2}],['Sistema solar','+1 bola orbital y +20% de daño.',{cnt:1,dm:1.2}]]);
 defTiers('tentacle','Pulpo vampírico',[['Brazo extra','+1 tentáculo sobre el límite base.',{cnt:1}],['Succión vital','+25% de curación por golpe.',{hm:1.25}],['Abrazo profundo','+20% de alcance y +15% de daño.',{rad:1.2,dm:1.15}],['Kraken','+1 tentáculo, +20% de daño y +20% de curación.',{cnt:1,dm:1.2,hm:1.2}]]);
+defTiers('lightning','Relámpago',[['Rayo ancho','+25% de radio del impacto.',{rad:1.25}],['Voltaje alto','+25% de daño.',{dm:1.25}],['Doble descarga','+1 relámpago por lanzamiento.',{cnt:1}],['Tormenta eléctrica','+40% de daño y -20% de enfriamiento.',{dm:1.4,cd:.8}]]);
+defTiers('wind','Cuchilla de viento',[['Filo afilado','+20% de daño.',{dm:1.2}],['Ráfaga','+1 cuchilla por lanzamiento.',{cnt:1}],['Vendaval','-20% de enfriamiento y +15% de alcance.',{cd:.8,rad:1.15}],['Huracán','+40% de daño y +1 cuchilla.',{dm:1.4,cnt:1}]]);
 defTiers('goldshot','Disparo de oro',[['Moneda afilada','+15% de daño.',{dm:1.15}],['Acuñación doble','+1 moneda por lanzamiento.',{cnt:1}],['Dinero veloz','-15% de enfriamiento.',{cd:.85}],['Fortuna contundente','+20% de daño; cada impacto rebota a un enemigo cercano con 50% de daño.',{dm:1.2,chain:1}]]);
 for(const s of SK)SRCMAP['★ '+s.n]=s.id;
 /* ---- mejoras: Cazador troll ---- */
@@ -4966,7 +5037,7 @@ FA.hydra=(g,s,c,o)=>{
   };
   neck(-.6,2,d,.25);neck(.6,4,d,.15);neck(0,0,b,.45);
 };
-const FOE_MAP={'Esqueleto':'skel','Slime':'slime','Goblin':'goblin','Zombi':'zombie','Espectro':'ghost','Gólem':'golem','Elemental de fuego':'fire','Elemental de hielo':'ice','Demonio':'demon','Autómata':'robot','Arquero esqueleto':'archer','Hechicero oscuro':'mage','Francotirador':'sniper','Rata de cloaca':'rat','Murciélago':'bat','Lobo huargo':'wolf','Araña madre':'spider','Gelatina gigante':'gel','Curandero trasgo':'healer','Revenante':'mummy','Troll':'troll','Cangrejo acorazado':'crab','Fénix':'phoenix','Vampiro':'vampire','Elemental eléctrico':'zap','Sombra':'shadow','Mamut de hielo':'mammoth','Guardián sagrado':'guardian','Caballero de cristal':'crystal','Hidra':'hydra'};
+const FOE_MAP={'Esqueleto':'skel','Slime':'slime','Goblin':'goblin','Zombi':'zombie','Espectro':'ghost','Gólem':'golem','Elemental de fuego':'fire','Elemental de hielo':'ice','Demonio':'demon','Autómata':'robot','Arquero esqueleto':'archer','Hechicero oscuro':'mage','Francotirador':'sniper','Rata de cloaca':'rat','Murciélago':'bat','Lobo huargo':'wolf','Araña madre':'spider','Gelatina gigante':'gel','Curandero trasgo':'healer','Revenante':'mummy','Troll':'troll','Cangrejo acorazado':'crab','Fénix':'phoenix','Vampiro':'vampire','Elemental eléctrico':'zap','Sombra':'shadow','Mamut de hielo':'mammoth','Guardián sagrado':'guardian','Caballero de cristal':'crystal','Hidra':'hydra','Ariete de asedio':'golem','Zapador':'goblin','Comandante orco':'troll','Catapulta':'robot'};
 function foeCrown(g){
   g.save();g.translate(0,-1.42);
   FH.poly(g,[-.5,.2,-.55,-.3,-.25,-.02,0,-.4,.25,-.02,.55,-.3,.5,.2],'#ffd24a');
@@ -5160,15 +5231,18 @@ function draw(){
     for(const t in e.dots){ctx.beginPath();ctx.arc(e.x,e.y,ry,0,6.3);ctx.strokeStyle=TYPES[t].c+'aa';ctx.stroke();ry+=2}
     if(e.slow){ctx.beginPath();ctx.arc(e.x,e.y,e.r+1,0,6.3);ctx.strokeStyle='#7fd6ffcc';ctx.stroke()}
     if(e.stun>0||e.root>0||e.rep>0){ctx.font='14px "Segoe UI Emoji",serif';ctx.fillText(e.stun>0?'📌':e.root>0?'🌿':'💨',e.x,e.y-e.r-14)}
+    if(e.elite){ctx.strokeStyle='#ffd24a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,e.r+4,0,6.3);ctx.stroke();ctx.lineWidth=1}
+    if(e.d&&e.d.aura){ctx.strokeStyle='rgba(224,160,48,.28)';ctx.beginPath();ctx.arc(e.x,e.y,e.d.aura.r,0,6.3);ctx.stroke()}
     if(e.hp<e.max){const w=e.r*2;ctx.fillStyle='#000a';ctx.fillRect(e.x-w/2,e.y-e.r-8,w,3);ctx.fillStyle='#e04050';ctx.fillRect(e.x-w/2,e.y-e.r-8,w*Math.max(0,e.hp/e.max),3)}
   }
   // mago
   const pulse=1+Math.sin(G.t*3)*.04;
-  if(HEROES[G.hero].melee&&(G.bx||G.by)){ctx.beginPath();ctx.arc(x0,y0,6,0,6.3);ctx.fillStyle='#ffffff22';ctx.fill()}
-  ctx.beginPath();ctx.arc(px,py,34*pulse,0,6.3);ctx.fillStyle='#8f7cff22';ctx.fill();
-  drawOctopus(towX()+20,towY()-20);
-  drawClassFx(px,py);drawFx3(px,py);
-  drawOrbitTent(px,py);
+  for(const i of [0,1])heroCtx(i,()=>{const qx=cx(),qy=cy();
+    if(G.dead)return;
+    if(HEROES[G.hero].melee&&(G.bx||G.by)){ctx.beginPath();ctx.arc(x0+(G.hoff||0),y0,6,0,6.3);ctx.fillStyle='#ffffff22';ctx.fill()}
+    ctx.beginPath();ctx.arc(qx,qy,34*pulse,0,6.3);ctx.fillStyle='#8f7cff22';ctx.fill();
+    G.noTowers=i===1;drawClassFx(qx,qy);drawFx3(qx,qy);G.noTowers=false});
+  {const m=midPos();drawOrbitTent(m.x,m.y)}
   if(G.shield>0){ctx.beginPath();ctx.arc(px,py,38,0,6.3);ctx.strokeStyle='#7fd6ffcc';ctx.lineWidth=3;ctx.stroke();ctx.lineWidth=1;ctx.fillStyle='#7fd6ff22';ctx.fill()}
   drawDragon(px,py);
   drawAllies();
@@ -5202,7 +5276,7 @@ function draw(){
       ctx.fillStyle='#2a2a30';ctx.beginPath();ctx.arc(sx,sy,9,0,6.3);ctx.fill();ctx.fillStyle='#ffb35a';ctx.beginPath();ctx.arc(sx-3,sy-3,3,0,6.3);ctx.fill();
       ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(f.sx+(f.x-f.sx)*p,f.sy+(f.y-f.sy)*p+6,8,3,0,0,6.3);ctx.fill()}
   }
-  drawHero(px,py);
+  for(const i of [0,1])heroCtx(i,()=>{if(G.dead)drawTomb();else{drawHero(cx(),cy());drawHeroBar()}});
   // textos
   for(const t of G.texts){ctx.globalAlpha=Math.min(1,t.t*2);ctx.font='bold '+t.size+'px Segoe UI,sans-serif';ctx.fillStyle='#000';ctx.fillText(t.s,t.x+1,t.y+1);ctx.fillStyle=t.c;ctx.fillText(t.s,t.x,t.y);ctx.globalAlpha=1}
   ctx.restore();
@@ -5217,11 +5291,12 @@ function bar(x,y,w,h,f,c,label){
 }
 function drawHud(){
   ctx.fillStyle='rgba(12,10,28,.6)';
-  const dy=36,bh=78+dy+(G.pending>0?20:0)+(G.tpending>0?20:0)+(G.haste>0?20:0);
+  const dy=36,bh=78+dy+(G.pending>0||(G.hs&&G.hs.pending>0)?20:0)+(G.tpending>0?20:0)+(G.haste>0?20:0);
   if(ctx.roundRect){ctx.beginPath();ctx.roundRect(6,6,262,bh,10);ctx.fill();ctx.beginPath();ctx.roundRect(W-124,6,118,50,10);ctx.fill()}
   else{ctx.fillRect(6,6,262,bh);ctx.fillRect(W-124,6,118,50)}
-  bar(12,12,240,18,G.hp/S.maxHp,'#d63a4a','❤ '+Math.ceil(G.hp)+' / '+S.maxHp);
-  if(G.shield>0){ctx.fillStyle='#7fd6ff';ctx.fillRect(12,12,240*Math.min(1,G.shield/S.maxHp),4)}
+  for(const i of [0,1])heroCtx(i,()=>{const x=i?134:12;
+    bar(x,12,118,18,G.dead?0:G.hp/S.maxHp,'#d63a4a',G.dead?HEROES[G.hero].icon+' 💀 '+Math.ceil(G.deadT)+'s':HEROES[G.hero].icon+' '+Math.ceil(G.hp)+'/'+S.maxHp);
+    if(!G.dead&&G.shield>0){ctx.fillStyle='#7fd6ff';ctx.fillRect(x,12,118*Math.min(1,G.shield/S.maxHp),4)}});
   bar(12,34,240,14,G.xp/need(),'#4a8cff','Nivel '+G.lvl+'  ·  XP '+Math.floor(G.xp)+' / '+need());
   {const dr=G.dr,dg=G.dragon;
     bar(12,52,118,14,dg?dg.hp/dg.max:0,dg&&dg.hp/dg.max<=.35?'#e04050':'#4ac26a',dg?'🐉 '+Math.ceil(dg.hp)+' / '+Math.ceil(dg.max):dr.egg?'🥚 Eclosiona en '+Math.ceil(dr.egg.t)+'s':'🐉 Sin dragón');
@@ -5231,7 +5306,7 @@ function drawHud(){
   ctx.fillStyle='#e8e6f0';ctx.fillText('☠ '+G.kills,110,66+dy);
   {let yy=88+dy;
     if(G.haste>0){ctx.fillStyle='#b9b3ff';ctx.fillText('⏳ Prisa '+Math.ceil(G.haste)+'s',14,yy);yy+=20}
-    if(G.pending>0){ctx.fillStyle='#ffd24a';ctx.fillText('★ '+G.pending+' punto'+(G.pending>1?'s':'')+' de héroe',14,yy);yy+=20}
+    {const pp=G.pending+(G.hs?G.hs.pending:0);if(pp>0){ctx.fillStyle='#ffd24a';ctx.fillText('★ '+pp+' punto'+(pp>1?'s':'')+' de héroe',14,yy);yy+=20}}
     if(G.tpending>0){ctx.fillStyle='#9fd0ff';ctx.fillText('🗼 '+G.tpending+' punto'+(G.tpending>1?'s':'')+' de torre',14,yy)}}
   ctx.textAlign='right';
   ctx.fillText(fmtT(G.t)+(G.speed>1?'  ⏩x'+G.speed:''),W-14,24);
@@ -5283,11 +5358,10 @@ function buildShop(){
   const mk=(id,icon)=>{const e=mkSlot(box,icon,()=>{buy(id);},()=>shopTip(id),'slot:inventory:'+id);shopEls[id]=e.b};
   mk('egg','🥚');
   for(const it of ITEMS)mk(it.id,it.n.split(' ')[0]);
-  mk('potion','🧪');
 }
 function itemCost(id){
   if(id==='egg')return G.dr.eggCost;
-  if(id.startsWith('sp_')){const k=id.slice(3);return Math.round(SPBASE[k]*Math.pow(1.27,G.spLv[k]-1))}
+  if(id.startsWith('sp_')){const k=id.slice(3);return Math.round(SPBASE[k]*Math.pow(1.27,Math.min(20,G.spLv[k])-1)*lateK(G.spLv[k]))}
   if(id==='potion')return 30+Math.floor(G.t/10);
   return ITEMS.find(i=>i.id===id).cost(G.items[id]);
 }
@@ -5304,7 +5378,7 @@ function buy(id){
   G.gold-=c;
   if(id==='potion')G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.5);
   else if(id.startsWith('sp_'))G.spLv[id.slice(3)]++;
-  else{G.items[id]++;if(id==='robe')G.hp+=25}
+  else{G.items[id]++;if(id==='robe')eachHero(()=>{G.hp+=25})}
   recalc();refreshAll();
 }
 function refreshShop(){
@@ -5347,9 +5421,9 @@ function setupTip(){
   bp.addEventListener('mouseleave',()=>showTip(null));
 }
 function powerStarInfo(level,isItem=false){
-  const step=isItem?10:5,rank=Math.min(4,Math.floor(Math.max(0,level)/step));
+  const step=10,rank=Math.min(4,Math.floor(Math.max(0,level)/step));
   const names=['Sin rango','Verde','Azul','Violeta','Dorado'];
-  const maximum=isItem&&level>=50;
+  const maximum=level>=50;
   return{rank,maximum,label:names[rank]+' · Nv'+level+(maximum?' · máximo':rank?' · desde Nv'+rank*step:' · primer rango en Nv'+step)};
 }
 function setPowerStar(button,level,isItem=false){
@@ -5365,12 +5439,13 @@ function mkSlot(box,icon,click,tip,autoKey){
   return {b,lv:b.querySelector('.sl'),cs:b.querySelector('.sc')};
 }
 /* --- compras automáticas: cola global de prioridades, casillas y secciones --- */
-const AUTO_SECTIONS={hero:'heroSec',tower:'skSec',powers:'powSec',inventory:'invSec',dragon:'drSec'};
+const AUTO_SECTIONS={hero:'heroSec',hero2:'heroSec2',tower:'skSec',powers:'powSec',inventory:'invSec',dragon:'drSec'};
 const autoUpgradeControls=new Map();
 let AUTO_UPGRADE_BUSY=false;
 function upgradeOptions(section,consumables=false){
   const option=(id,level,max,cost,wallet,run,available=true)=>({section,id,key:'slot:'+section+':'+id,level,max,cost,wallet,run,available});
-  if(section==='hero')return CLS[G.hero].map(a=>option(a.id,clv(a.id),CLSMAX,clsCost(a.id),'pending',mode=>heroUp(a.id,mode)));
+  if(section==='hero2'&&G.hs)return CLS[G.heroes[1]].map(a=>option(a.id,clv(a.id),CLSMAX,clsCost(a.id),'pending2',mode=>heroCtx(1,()=>heroUp(a.id,mode))));
+  if(section==='hero')return CLS[G.heroes?G.heroes[0]:G.hero].map(a=>option(a.id,clv(a.id),CLSMAX,clsCost(a.id),'pending',mode=>heroUp(a.id,mode)));
   if(section==='tower')return SK.map((a,i)=>option(a.id,G.skills[a.id],SKMAX,skGoldCost(G.skills[a.id]),'tpending',mode=>skillUp(i,mode)));
   if(section==='powers')return SPS.map(a=>option(a.id,G.spLv[a.id],SPMAX,powerCost(a.id),'tpending',mode=>powerUp(a.id,mode),tLvl()>=a.unlock));
   if(section==='dragon')return DRSK.map(a=>option(a.id,G.dr.sk[a.id],DRMAX,drCost(a.id),'dragon',mode=>dragonUp(a.id,mode)));
@@ -5378,7 +5453,6 @@ function upgradeOptions(section,consumables=false){
     const items=ITEMS.map(a=>option(a.id,G.items[a.id],a.max,itemCost(a.id),null,()=>{const before=G.items[a.id];buy(a.id);return G.items[a.id]>before}));
     if(consumables){
       items.push(option('egg',0,Infinity,itemCost('egg'),null,()=>buyEgg(),itemAvail('egg')));
-      items.push(option('potion',0,Infinity,itemCost('potion'),null,()=>{const hp=G.hp;buy('potion');return G.hp>hp},itemAvail('potion')));
     }
     return items;
   }
@@ -5436,7 +5510,7 @@ function refreshAutoUpgradeUi(){
   }
 
 }
-function autoUpgradeWallet(option){return option.wallet==='dragon'?G.dr.pts:option.wallet?G[option.wallet]:0}
+function autoUpgradeWallet(option){return option.wallet==='dragon'?G.dr.pts:option.wallet==='pending2'?(G.hs?(HCUR?G.pending:G.hs.pending):0):option.wallet?G[option.wallet]:0}
 function runAutoUpgrades(budget=16){
   if(!G||G.over||G.modal||G.paused||!G.autoUpgrades.length)return 0;
   let purchases=0;AUTO_UPGRADE_BUSY=true;
@@ -5483,7 +5557,7 @@ function skTip(i){
   if(u)h+='<div class="ut'+(l>=ULT_LVL?' on':'')+'">★ Ultimate (Nv'+ULT_LVL+'): <b>'+u.n+'</b><br>'+u.d+(l>=ULT_LVL?'<br>'+(u.perm?Math.round(ultChance(s.id,l)*100)+'% de probabilidad':(G.ultCd[s.id]>0?'Recarga '+Math.ceil(G.ultCd[s.id])+' s':'¡Lista!')):'')+'</div>';
   return h+tierHtml(s.id);
 }
-const skGoldCost=l=>Math.round(80*Math.pow(1.28,l));
+const skGoldCost=l=>Math.round(80*Math.pow(1.28,Math.min(20,l))*lateK(l));
 function skillUp(i,mode){
   if(G.modal||G.over)return false;
   const s=SK[i];if(!s)return false;
@@ -5514,7 +5588,7 @@ function refreshSkills(){
 /* --- poderes (hechizos): punto u oro --- */
 let selPow=null,hovPow=null;
 const powEls={};
-const powerCost=id=>Math.round(SPBASE[id]*Math.pow(1.27,G.spLv[id]-1));
+const powerCost=id=>Math.round(SPBASE[id]*Math.pow(1.27,Math.min(20,G.spLv[id])-1)*lateK(G.spLv[id]));
 function powerUp(id,mode){
   if(G.modal||G.over)return false;
   const sp=SPS.find(x=>x.id===id);
@@ -5640,17 +5714,18 @@ function refreshDragonUI(){
     e.b.classList.toggle('off',max||(!up&&G.gold<c));
   }
 }
-const heroEls={};
+const heroEls=[{},{}];
 let selCls=null,hovCls=null,infoMode='skill';
 const heroBuy=id=>G.pending>0?heroUp(id,'pt'):heroUp(id,'gold');
-function buildHeroMenu(){
-  const box=$('#heroSk');box.innerHTML='';
-  const previousMelody=$('#bardMelody');if(previousMelody)previousMelody.remove();
-  for(const k in heroEls)delete heroEls[k];
+function buildHeroMenu(){for(const i of [0,1])heroCtx(i,()=>buildHeroPanel(i))}
+function buildHeroPanel(i){
+  const sx=i?'2':'',box=$('#heroSk'+sx);box.innerHTML='';
+  const previousMelody=$('#bardMelody'+sx);if(previousMelody)previousMelody.remove();
+  const els=heroEls[i];for(const k in els)delete els[k];
   const hd=HEROES[G.hero];
-  $('#heroName').textContent=hd.icon+' '+hd.n;
-  if(G.hero==='bard'){const b=document.createElement('button');b.id='bardMelody';b.className='ctl';b.style.cssText='display:block;width:auto;max-width:100%;height:26px;min-height:26px;font-size:11px;padding:3px 8px;margin:0 0 5px';b.title='Alterna las melodías aprendidas. Durante Gran concierto la secuencia es automática.';b.onclick=bardSwitch;box.before(b)}
-  CLS[G.hero].forEach(a=>{heroEls[a.id]=mkSlot(box,a.icon,()=>heroBuy(a.id),()=>heroTip(a),'slot:hero:'+a.id);heroEls[a.id].b._rid=a.id});
+  $('#heroName'+sx).textContent=hd.icon+' '+hd.n;
+  if(G.hero==='bard'){const b=document.createElement('button');b.id='bardMelody'+sx;b.className='ctl';b.style.cssText='display:block;width:auto;max-width:100%;height:26px;min-height:26px;font-size:11px;padding:3px 8px;margin:0 0 5px';b.title='Alterna las melodías aprendidas. Durante Gran concierto la secuencia es automática.';b.onclick=()=>heroCtx(i,bardSwitch);box.before(b)}
+  CLS[G.hero].forEach(a=>{els[a.id]=mkSlot(box,a.icon,()=>heroCtx(i,()=>heroBuy(a.id)),()=>heroCtx(i,()=>heroTip(a)),'slot:hero'+sx+':'+a.id);els[a.id].b._rid=a.id});
 }
 function heroTip(a){return heroTip0(a)+tierHtml(a.id)}
 function heroTip0(a){
@@ -5658,11 +5733,14 @@ function heroTip0(a){
   return '<h3>'+a.icon+' '+a.n+'</h3><div class="sub">'+HEROES[G.hero].n+' · Nivel '+l+' / '+CLSMAX+'</div><p>'+a.desc+'</p>'+
     kvh('Ahora',l?a.eff(l):'—')+(RNG[a.id]?kvh('Alcance',Math.round(rg(a.id))):'')+(l<CLSMAX?kvh('Siguiente nivel',a.eff(l+1))+kvh('Coste',G.pending>0?'1 punto':clsCost(a.id)+' 💰'):'');
 }
-function refreshHero(){
-  if(G.hero==='bard'){const b=$('#bardMelody');if(b){b.textContent='Melodía: '+({j_march:'Marcha',j_refuge:'Refugio',j_ballad:'Balada'}[bardSong()]||'Aprende una');b.disabled=G.ht.concertOn>0||BARD_SONGS.filter(id=>clv(id)).length<2}}
+function refreshHero(){for(const i of [0,1])heroCtx(i,()=>refreshHeroPanel(i))}
+function refreshHeroPanel(i){
+  const sx=i?'2':'',heroEl=heroEls[i];
+  $('#pts'+sx).textContent=G.pending;$('#ptsbox'+sx).classList.toggle('on',G.pending>0);
+  if(G.hero==='bard'){const b=$('#bardMelody'+sx);if(b){b.textContent='Melodía: '+({j_march:'Marcha',j_refuge:'Refugio',j_ballad:'Balada'}[bardSong()]||'Aprende una');b.disabled=G.ht.concertOn>0||BARD_SONGS.filter(id=>clv(id)).length<2}}
   const up=G.pending>0;
   for(const a of CLS[G.hero]){
-    const e=heroEls[a.id];if(!e)continue;
+    const e=heroEl[a.id];if(!e)continue;
     const l=clv(a.id),c=clsCost(a.id),max=l>=CLSMAX;
     setPowerStar(e.b,l);e.lv.textContent=l?l+'/'+CLSMAX:'—';
     e.cs.textContent=max?'MAX':(up?'+ punto':c+' 💰');
@@ -5723,22 +5801,34 @@ function rankHTML(limit,mine){
   return '<table class="rank"><tr><th>#</th><th>Jugador</th><th>Héroe</th><th>Tiempo</th><th>Nivel</th></tr>'+
     r.map((x,i)=>'<tr'+(mine&&x.d===mine.d?' class="me"':'')+'><td>'+(i+1)+'</td><td>'+flagEmoji(x.f)+' '+esc(x.f||'')+' '+esc(x.n)+'</td><td>'+(HEROES[x.h]?HEROES[x.h].icon+' '+HEROES[x.h].n:'🧙 Mago')+'</td><td>'+fmtT(x.t)+'</td><td>'+x.l+'</td></tr>').join('')+'</table>';
 }
-let selHero='mage',PREV=[];
+let selHero='mage',selHeroes=['mage','archer'],PREV=[];
 function drawPreviews(now){
   for(const p of PREV){p.c.clearRect(0,0,130,150);drawHeroOn(p.c,65,104,p.k,now,Math.sin(now*1.2)*.6,2.3)}
 }
 function showStart(){
   G.modal='start';G.paused=true;
   const o=$('#overlay');o.style.display='flex';
-  let nick='';try{nick=localStorage.getItem('mago_nick')||'';selHero=localStorage.getItem('mago_hero')||selHero}catch(e){}
-  if(!HEROES[selHero])selHero='mage';
-  o.innerHTML='<div class="card" style="max-width:1180px;text-align:center"><h1>🧙 Mago Infinito</h1><p>Elige tu héroe y sobrevive el mayor tiempo posible.</p><div class="heroes" id="heroes"></div>'+
+  let nick='';try{nick=localStorage.getItem('mago_nick')||'';const sv=JSON.parse(localStorage.getItem('mago_heroes')||'null');if(Array.isArray(sv))selHeroes=sv.filter(k=>HEROES[k]).slice(0,2)}catch(e){}
+  selHeroes=selHeroes.filter(k=>HEROES[k]);if(selHeroes.length<2)selHeroes=['mage','archer'];selHero=selHeroes[1];
+  o.innerHTML='<div class="card" style="max-width:1180px;text-align:center"><h1>🧙 Mago Infinito</h1><p>Elige <b>dos héroes</b> para defender las torres y sobrevive el mayor tiempo posible.</p><div class="heroes" id="heroes"></div>'+
     '<div id="heroDesc" class="sub" style="min-height:34px;margin:8px 0"></div>'+
     '<div style="margin:6px 0"><input type="text" id="nick" maxlength="16" placeholder="Tu apodo" value="'+esc(nick)+'"> <span title="Detectada por tu navegador">'+flagEmoji(FLAG)+' '+esc(FLAG||'')+'</span></div>'+
     '<button class="btn" id="play">Jugar</button> <button class="btn alt" id="rk">🏆 Ranking</button></div>';
   PREV=[];const cards={};
   const box=$('#heroes');
-  const pick=k=>{selHero=k;for(const q in cards)cards[q].className='hcard'+(q===k?' on':'');$('#heroDesc').textContent=HEROES[k].icon+' '+HEROES[k].n+' — '+HEROES[k].desc};
+  const paint=()=>{
+    for(const q in cards){const n=selHeroes.indexOf(q);cards[q].className='hcard'+(n>=0?' on':'');
+      let bd=cards[q].querySelector('.hn');if(!bd){bd=document.createElement('i');bd.className='hn';bd.style.cssText='position:absolute;top:4px;right:6px;font-style:normal;font-weight:700;color:#ffd24a';cards[q].style.position='relative';cards[q].appendChild(bd)}
+      bd.textContent=n>=0?'#'+(n+1):''}
+    const pl=$('#play');if(pl){pl.disabled=selHeroes.length<2;pl.style.opacity=selHeroes.length<2?.5:1}
+    $('#heroDesc').textContent=HEROES[selHero].icon+' '+HEROES[selHero].n+' — '+HEROES[selHero].desc+(selHeroes.length<2?'  (elige otro héroe)':'');
+  };
+  const pick=k=>{
+    selHero=k;
+    const n=selHeroes.indexOf(k);
+    if(n>=0)selHeroes.splice(n,1);else{if(selHeroes.length>=2)selHeroes.shift();selHeroes.push(k)}
+    paint();
+  };
   Object.keys(HEROES).forEach(k=>{
     const d=document.createElement('div');d.className='hcard'+(k===selHero?' on':'');
     d.innerHTML='<canvas width="130" height="150"></canvas><b>'+HEROES[k].n+'</b>';
@@ -5746,12 +5836,13 @@ function showStart(){
     box.appendChild(d);cards[k]=d;
     PREV.push({c:d.querySelector('canvas').getContext('2d'),k});
   });
-  pick(selHero);
+  paint();
   const go=()=>{
+    if(selHeroes.length<2)return;
     const n=($('#nick').value||'').trim().slice(0,16)||'Mago';
-    try{localStorage.setItem('mago_nick',n);localStorage.setItem('mago_hero',selHero)}catch(e){}
+    try{localStorage.setItem('mago_nick',n);localStorage.setItem('mago_heroes',JSON.stringify(selHeroes))}catch(e){}
     PREV=[];
-    newGame(selHero);G.nick=n;
+    newGame(selHeroes[0],selHeroes[1]);G.nick=n;
     G.modal=null;G.paused=false;$('#overlay').style.display='none';
   };
   $('#play').onclick=go;
@@ -5779,7 +5870,7 @@ function dmgTable(){
 function showOver(){
   G.modal='over';G.paused=true;
   const o=$('#overlay');o.style.display='flex';
-  o.innerHTML='<div class="card" style="max-width:460px;text-align:center"><h1>💀 '+HEROES[G.hero].icon+' '+HEROES[G.hero].n+' ha caído</h1><p>'+flagEmoji(FLAG)+' <b>'+esc(G.nick||'Mago')+'</b> sobrevivió <b>'+fmtT(G.t)+'</b> · Nivel <b>'+G.lvl+'</b> · <b>'+G.kills+'</b> enemigos<br>Puesto en tu ranking: <b>'+(G.rankPos+1)+'</b> · Mejor tiempo: '+fmtT(best)+'</p>'+dmgTable()+
+  o.innerHTML='<div class="card" style="max-width:460px;text-align:center"><h1>💀 Todas las torres han caído</h1><p class="sub">'+HEROES[G.heroes[0]].icon+' '+HEROES[G.heroes[0]].n+' y '+HEROES[G.heroes[1]].icon+' '+HEROES[G.heroes[1]].n+' ya no tienen nada que defender</p><p>'+flagEmoji(FLAG)+' <b>'+esc(G.nick||'Mago')+'</b> sobrevivió <b>'+fmtT(G.t)+'</b> · Nivel <b>'+G.lvl+'</b> · <b>'+G.kills+'</b> enemigos<br>Puesto en tu ranking: <b>'+(G.rankPos+1)+'</b> · Mejor tiempo: '+fmtT(best)+'</p>'+dmgTable()+
     '<div style="max-height:150px;overflow:auto;text-align:left">'+rankHTML(10,G.lastRun)+'</div><button class="btn" id="again">Jugar de nuevo (R)</button> <button class="btn alt" id="rk2">🏆 Ranking</button> <button class="btn alt" id="chg">Cambiar héroe</button></div>';
   $('#again').onclick=()=>{newGame();G.modal=null};
   $('#rk2').onclick=()=>showRank('over');
@@ -6647,6 +6738,7 @@ function draw6(x0,y0){
 
 /* Trébol de la suerte: crítico global para ataques y habilidades */
 (function(){const _dd0=dealDamage0;dealDamage0=function(e,amount,type){
+  if(e.boss&&G.items.hunter)amount*=1+.06*G.items.hunter;
   if(S.crit>0&&amount>0&&Math.random()<S.crit){amount*=1.5+S.critM;if(Math.random()<.35)txt(e.x+(Math.random()-.5)*16,e.y-e.r-14,'💥 ¡Crítico!','#ffd24a',14)}
   return _dd0(e,amount,type)}})();
 /* ===== TANDA 7: TORRE DEL MAGO =====
@@ -6656,7 +6748,22 @@ Object.assign(RNG,{towerBasic:380});
 // Tras el nivel 30 el coste crece linealmente para sostener la progresión infinita.
 const tNeed=l=>Math.round(15*Math.pow(1.33,Math.min(29,l-1))*(1+.06*Math.max(0,l-30)));
 const tLvl=()=>(G&&G.tower)?G.tower.lvl:1;
-const towerCount=()=>1+Math.floor(tLvl()/50);
+const towerCount=()=>1+Math.floor(tLvl()/40);
+const TOWER_R=30,TOWER_DMG=.7;
+const towerMax=(l=tLvl())=>Math.round(300+75*l);
+const aliveTowers=()=>syncTowers().map((u,i)=>({u,i})).filter(o=>!o.u.dead);
+function hurtTower(i,d){
+  const u=syncTowers()[i];if(!u||u.dead||!(d>0))return;
+  if(u.hp==null)u.hp=towerMax();
+  u.hp-=d;u.hurtAt=G.t;
+  if(u.hp<=0){
+    u.hp=0;u.dead=true;const x=towX(i),y=towY(i);
+    txt(x,y-70,'💥 ¡Torre destruida!','#ff6a4a',22);
+    for(let k=0;k<3;k++)G.fx.push({k:'ring',x,y,r:40+k*30,t:.5+k*.1,c:'#ff8a4a'});
+    if(!LOWQ)for(let k=0;k<18;k++)G.fx.push({k:'p',x,y,vx:(Math.random()-.5)*220,vy:(Math.random()-.5)*220,t:.7,c:'#b0a090'});
+    if(!aliveTowers().length)gameOver();
+  }
+}
 function towerPosition(index=0){
   if(!index)return{x:W/2-125,y:H/2-30};
   const angles=[0,-Math.PI/2,Math.PI/2,Math.PI/4,3*Math.PI/4,5*Math.PI/4,7*Math.PI/4];
@@ -6666,7 +6773,7 @@ function towerPosition(index=0){
 const towX=(index=0)=>towerPosition(index).x,towY=(index=0)=>towerPosition(index).y;
 function syncTowers(){
   const T=G.tower;if(!T.satellites)T.satellites=[];
-  while(T.satellites.length<towerCount()-1)T.satellites.push({cd:.5,shotAt:-9,aim:0});
+  while(T.satellites.length<towerCount()-1)T.satellites.push({cd:.5,shotAt:-9,aim:0,hp:towerMax(),dead:false});
   T.satellites.length=towerCount()-1;return[T,...T.satellites];
 }
 const eggX=()=>towX()+58,eggY=()=>towY()+34; /* nido fijo junto a la torre */
@@ -6679,6 +6786,7 @@ const TSRC_POW=()=>{for(const sp of SPS)TSRC.add(sp.n)};
 function towerBegin(index=0){G.orgN=(G.orgN||0)+1;G.org={x:towX(index),y:towY(index)}}
 /* Habilidades de una torre. La torre 0 usa el estado global; las demás tienen el suyo (enfriamientos, orbitales, pulpo, poderes). */
 function towerAbilities(index,unit,dt){
+  if(unit.dead)return;
   let sw=null;
   if(index){
     let sv=unit.sv;
@@ -6697,7 +6805,7 @@ function towerAbilities(index,unit,dt){
     }
   }
   updateUlts(dt);
-  updateTentacles(dt);
+
   updateSpecials(dt,index);
   towerEnd();
   G.orbOff=0;
@@ -6708,14 +6816,16 @@ function towerEnd(){G.orgN=Math.max(0,(G.orgN||0)-1);if(G.orgN===0)G.org=null}
 /* ---- experiencia y niveles ---- */
 function towerGainXp(a){
   const T=G.tower;if(!T||!Number.isFinite(a)||!(a>0))return;
+  a*=1+.08*(G.items.core||0);
   T.xp+=a;
   while(T.xp>=tNeed(T.lvl)){
     T.xp-=tNeed(T.lvl);T.lvl++;
+    for(const o of aliveTowers()){const mx=towerMax();o.u.hp=Math.min(mx,(o.u.hp==null?mx:o.u.hp)+75+mx*.15)}
     if(SK.every(q=>G.skills[q.id]>=SKMAX)&&SPS.every(sp=>G.spLv[sp.id]>=SPMAX)){G.bonus++;txt(towX(),towY()-90,'Torre: todo al máximo +10% daño','#ffd24a',16)}else G.tpending++;
     txt(towX(),towY()-80,'🗼 ¡Torre Nv '+T.lvl+'!','#9fd0ff',20);
     for(let k=0;k<3;k++)G.fx.push({k:'ring',x:towX(),y:towY(),r:50+k*28,t:.45+k*.1,c:'#9fd0ff'});
     for(const sp of SPS)if(sp.unlock===T.lvl)txt(towX(),towY()-108,'¡Nuevo poder: '+sp.n+'!','#ffd24a',18);
-    if(T.lvl%50===0){syncTowers();const pos=towerPosition(towerCount()-1);txt(pos.x,pos.y-100,'¡Nueva torre arcana!','#ffd24a',22);G.fx.push({k:'ring',x:pos.x,y:pos.y,r:90,t:.8,c:'#9fd0ff'})}
+    if(T.lvl%40===0){syncTowers();const pos=towerPosition(towerCount()-1);txt(pos.x,pos.y-100,'¡Nueva torre arcana!','#ffd24a',22);G.fx.push({k:'ring',x:pos.x,y:pos.y,r:90,t:.8,c:'#9fd0ff'})}
   }
 }
 function towerKillXp(e){
@@ -6727,7 +6837,7 @@ function towerKillXp(e){
 function towerBasic(dt){
   const T=G.tower,states=syncTowers(),dmg=(14+3.2*T.lvl)*DMG_K*S.dmg;
   for(let index=0;index<states.length;index++){
-    const unit=states[index];unit.cd-=dt;if(unit.cd>0)continue;
+    const unit=states[index];if(unit.dead)continue;unit.cd-=dt;if(unit.cd>0)continue;
     const ox=towX(index),oy=towerTopY(index);
     SRC='Rayo arcano de la torre';
     const target=pick(1,'magic',dmg,rg('towerBasic'),{x:ox,y:towY(index)})[0];
@@ -6743,6 +6853,7 @@ function towerBasic(dt){
 function drawTower(index=0){
   const T=G.tower;if(!T)return;
   const unit=index?T.satellites[index-1]:T;
+  if(unit.dead){drawRuins(index);return}
   const c=ctx,x=towX(index),gy=towY(index)+22,n=towerFloors(),t=G.t,flash=Math.max(0,1-(t-(unit.shotAt==null?-9:unit.shotAt))/.3);
   c.save();c.translate(x,gy);
   c.fillStyle='rgba(0,0,0,.32)';c.beginPath();c.ellipse(0,2,28,8,0,0,6.3);c.fill();
@@ -6773,6 +6884,19 @@ function drawTower(index=0){
   const lab='Torre Nv '+T.lvl;c.fillStyle='rgba(12,10,28,.7)';const w=c.measureText(lab).width+12;
   if(c.roundRect){c.beginPath();c.roundRect(x-w/2,gy+10,w,15,6);c.fill()}else c.fillRect(x-w/2,gy+10,w,15);
   c.fillStyle='#bfe0ff';c.fillText(lab,x,gy+18);c.restore();
+  {const mx=towerMax(),f=Math.max(0,Math.min(1,(unit.hp==null?mx:unit.hp)/mx)),bw=54;
+   c.fillStyle='#000a';c.fillRect(x-bw/2,gy+28,bw,6);c.fillStyle=f<.3?'#e04050':f<.6?'#e0b030':'#4ac26a';c.fillRect(x-bw/2,gy+28,bw*f,6);
+   c.strokeStyle='#ffffff40';c.strokeRect(x-bw/2+.5,gy+28.5,bw-1,5)}
+}
+function drawRuins(index){
+  const c=ctx,x=towX(index),gy=towY(index)+22;
+  c.save();c.translate(x,gy);
+  c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(0,2,28,8,0,0,6.3);c.fill();
+  gPoly(c,[-24,0,-18,-9,-8,-5,-2,-14,8,-6,16,-12,24,0],'#6f7380');
+  gPoly(c,[-14,0,-9,-6,0,-3,9,-7,15,0],'#8a8f9c');
+  if(!LOWQ)for(let i=0;i<3;i++)hGlow(c,-6+i*7,-14-((G.t*20+i*9)%26),6+i*2,'#555',.25);
+  c.font='bold 10px Segoe UI,sans-serif';c.textAlign='center';c.fillStyle='#c9c4d6';c.fillText('Ruinas',0,20);
+  c.restore();
 }
 
 /* ---- interfaz: título, barra de experiencia y casillas de poderes ---- */
@@ -6814,7 +6938,7 @@ function refreshTowerUi(){
   TSRC_POW();
   /* daño de la torre por enemigo: base de su experiencia */
   const _d3t=drawFx3;
-  drawFx3=function(x0,y0){const states=syncTowers();for(let i=0;i<states.length;i++)drawTower(i);_d3t(x0,y0)};
+  drawFx3=function(x0,y0){if(!G.noTowers){const states=syncTowers();for(let i=0;i<states.length;i++)drawTower(i)}_d3t(x0,y0)};
   const _ra=refreshAll;
   refreshAll=function(){if(AUTO_UPGRADE_BUSY)return;_ra();refreshTowerUi()};
   buildPowSlots();
@@ -6833,6 +6957,54 @@ function frame(now){
   draw();
   requestAnimationFrame(frame);
 }
+/* ===== DOS HÉROES =====
+   El héroe A usa el estado normal de G; el B guarda el suyo en G.hs. heroCtx(1,fn) los intercambia mientras corre fn,
+   así todo el código de héroe existente (habilidades, ataque, dibujo...) funciona igual para cada uno.
+   Comparten: nivel, experiencia, oro, vida, objetos y torres. Cada uno tiene sus propias habilidades y puntos. */
+const HKEYS=['hero','ht','bx','by','mv','basicCd','punchAt','dash','aim','walls','mines','turrets','sdrags','heroInv','fragN','fragT','sanct','rage','rageT','fury','furyT','totems','atkN','atkAt','combo','inCorpse','hface','hvx','hbx','hstep','hlast','hurtAt','faithN','x5','dodgeT','hoff','pending','hp','shield','dead','deadT','tomb','mhp'];
+let HCUR=0;   /* héroe cuyo estado está ahora "vivo" en G */
+function swapH(){for(const k of HKEYS){const t=G[k];G[k]=G.hs[k];G.hs[k]=t}S.maxHp=G.mhp}
+const eachHero=fn=>{for(const i of [0,1])heroCtx(i,()=>{if(!G.dead)fn()})};   /* aplica algo a cada héroe vivo */
+const lowFrac=()=>{let m=1;eachHero(()=>{m=Math.min(m,G.hp/S.maxHp)});return m};
+const HERO_RESPAWN=20;
+function heroDie(){
+  G.dead=true;G.deadT=HERO_RESPAWN;G.hp=0;G.shield=0;G.dash=null;G.tomb={x:cx(),y:cy()};
+  txt(G.tomb.x,G.tomb.y-40,'💀 '+HEROES[G.hero].n+' ha caído','#ff8a8a',16);
+  for(let k=0;k<2;k++)G.fx.push({k:'ring',x:G.tomb.x,y:G.tomb.y,r:40+k*25,t:.4+k*.1,c:'#ff8a8a'});
+}
+function heroRevive(){
+  G.dead=false;G.bx=G.by=0;G.hp=Math.round(S.maxHp*.6);G.heroInv=Math.max(G.heroInv||0,2.5);G.tomb=null;
+  txt(cx(),cy()-50,'✨ '+HEROES[G.hero].n+' regresa','#ffe27a',18);
+  for(let k=0;k<3;k++)G.fx.push({k:'ring',x:cx(),y:cy(),r:30+k*26,t:.4+k*.1,c:'#ffe27a'});
+}
+function drawTomb(){
+  const t=G.tomb;if(!t)return;const c=ctx,f=1-G.deadT/HERO_RESPAWN;
+  c.save();c.translate(t.x,t.y+16);
+  c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(0,2,15,5,0,0,6.3);c.fill();
+  c.fillStyle='#8c909c';c.beginPath();c.moveTo(-10,0);c.lineTo(-10,-18);c.arc(0,-18,10,Math.PI,0);c.lineTo(10,0);c.closePath();c.fill();
+  c.strokeStyle='#5a5e6a';c.lineWidth=1.4;c.stroke();
+  c.strokeStyle='#3c3f4a';c.lineWidth=2;c.beginPath();c.moveTo(0,-24);c.lineTo(0,-10);c.moveTo(-5,-19);c.lineTo(5,-19);c.stroke();
+  c.strokeStyle='#ffe27a';c.lineWidth=3;c.beginPath();c.arc(0,-14,17,-Math.PI/2,-Math.PI/2+6.283*f);c.stroke();
+  c.font='bold 11px Segoe UI,sans-serif';c.textAlign='center';c.fillStyle='#fff';c.fillText(HEROES[G.hero].icon+' '+Math.ceil(G.deadT)+'s',0,18);
+  c.restore();
+}
+function drawHeroBar(){
+  if(G.dead)return;const x=cx(),y=cy()-46,w=40,f=Math.max(0,Math.min(1,G.hp/S.maxHp));
+  ctx.fillStyle='#000a';ctx.fillRect(x-w/2,y,w,5);ctx.fillStyle=f<.3?'#e04050':'#4ac26a';ctx.fillRect(x-w/2,y,w*f,5);
+  if(G.shield>0){ctx.fillStyle='#7fd6ff';ctx.fillRect(x-w/2,y-2,w*Math.min(1,G.shield/S.maxHp),2)}
+}
+function heroCtx(i,fn){
+  if(!G||!G.hs||i===HCUR)return fn();
+  swapH();HCUR=i;
+  try{return fn()}finally{swapH();HCUR=1-i}
+}
+const heroPos=i=>(!G.hs||i===HCUR)?{x:cx(),y:cy()}:{x:W/2+G.hs.hoff+G.hs.bx,y:H/2+G.hs.by};
+const midPos=()=>{const a=heroPos(0),b=heroPos(1);return G.hs?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:a};
+/* el daño lo recibe el héroe al que atacó el enemigo */
+{const _h=hurt;hurt=function(d){if(G.hs&&G.tgtHero===1&&HCUR===0)return heroCtx(1,()=>_h(d));return _h(d)}}
+/* eventos de baja y de impacto: los reciben ambos héroes */
+{const _k=heroOnKill;heroOnKill=function(e){_k(e);if(G.hs)heroCtx(1-HCUR,()=>_k(e))}}
+{const _n=newHeroesHit;newHeroesHit=function(p,e){if(G.hs&&p.nh){const o=G.heroes[1]===p.nh?1:0;return heroCtx(o,()=>_n(p,e))}return _n(p,e)}}
 {const r0=loadRank();best=r0.length?r0[0].t:0}
 resize();buildShop();buildSkillsMenu();buildPowers();buildDragonUI();buildAutoUpgradeHeaders();buildBar();buildRankBtn();buildTabs();setupDrawers();setupTip();
 {let z=NaN;try{z=parseFloat(localStorage.getItem('mago_zoom'))}catch(e){}if(z)Z=Math.max(.5,Math.min(1.8,z));else if(typeof innerWidth!=='undefined'&&innerWidth<700)Z=.7}
