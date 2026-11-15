@@ -43,13 +43,14 @@ for(const sp of SPS){
  towerGainXp(tNeed(G.tower.lvl));assert.equal(tLvl(),sp.unlock);useSpecial(sp.id);assert.ok(G.spCd[sp.id]>0,sp.id);
  assert.equal(G.org,null);
 }
-// La progresión continúa después de 30 y crea torres reales en 50, 100, 150...
+// Cada torre sube hasta 40; al llegar aparece otra nueva en nivel 1 que sube por separado.
 setup();for(let level=1;level<31;level++)towerGainXp(tNeed(tLvl()));
-assert.equal(tLvl(),31);assert.equal(G.tpending,31);assert.equal(towerCount(),1);
-for(const threshold of [50,100,150]){
- G.tower.lvl=threshold-1;G.tower.xp=0;assert.equal(towerCount(),threshold/50);
- towerGainXp(tNeed(tLvl())+7);assert.equal(tLvl(),threshold);assert.equal(towerCount(),1+threshold/50);assert.equal(G.tower.xp,7);
- assert.equal(syncTowers().length,towerCount());
+assert.equal(G.tower.lvl,31);assert.equal(G.tpending,31);assert.equal(towerCount(),1);
+for(let n=1;n<=3;n++){
+ const last=syncTowers()[n-1];last.lvl=TOWER_MAXLVL-1;last.xp=0;assert.equal(towerCount(),n);
+ towerGainXp(tNeed(tLvl())+7);assert.equal(last.lvl,TOWER_MAXLVL);assert.equal(towerCount(),n+1);
+ const fresh=syncTowers()[n];assert.equal(fresh.lvl,1);assert.equal(fresh.xp,7);assert.equal(syncTowers().length,towerCount());
+ assert.ok(towerFloors(n)<towerFloors(n-1));
 }
 assert.ok(Number.isFinite(tNeed(10000)));assert.ok(tNeed(10001)>tNeed(10000));
 const positions=Array.from({length:50},(_,i)=>towerPosition(i));assert.equal(new Set(positions.map(p=>p.x.toFixed(4)+','+p.y.toFixed(4))).size,50);
@@ -57,6 +58,14 @@ G.enemies=[];G.projs=[];for(let i=0;i<towerCount();i++)foe(1e8,towX(i)+20,towY(i
 for(const unit of syncTowers())unit.cd=0;towerBasic(.1);assert.equal(G.projs.length,towerCount());
 for(let i=0;i<towerCount();i++){assert.equal(G.projs[i].x,towX(i));assert.equal(G.projs[i].y,towerTopY(i))}draw();
 setup();for(const s of SK)G.skills[s.id]=SKMAX;towerGainXp(tNeed(1));assert.equal(G.tpending,2);assert.equal(G.bonus,0);
+// Cíclope: uno por torre, prioriza jefes y petrifica; el viento empuja hacia atrás.
+setup();G.skills.lightning=1;G.skills.wind=1;G.enemies=[];
+const common=foe(1e6,towX()+60,towY()),bossE=foe(1e6,towX()+120,towY());bossE.boss=true;
+updateCyclopes(.1);assert.ok(syncTowers()[0].cyc);
+for(let i=0;i<200;i++)updateCyclopes(.05);
+assert.ok(bossE.tdmg>0&&!(common.tdmg>0),'el cíclope prioriza al jefe');assert.ok(common.stone>0||bossE.stone>0);
+drawCyclopes();
+const wx=foe(1e6,100,100),wx0=wx.x;hitEnemy({sk:'wind',vx:600,vy:0,dmg:1,type:'phys',src:'t'},wx);assert.ok(wx.x>wx0);
 // Meteoros, zonas e invocaciones conservan su atribución y los objetos amplían su duración.
 for(const id of ['meteor','cloud','hole','skel']){
  setup();G.tower.lvl=30;G.items.hourglass=10;G.items.banner=10;G.tv=(G.tv||0)+1;recalc();e=foe(10000);
