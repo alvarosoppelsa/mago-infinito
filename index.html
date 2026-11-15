@@ -354,13 +354,16 @@ const itemShieldFactor=l=>l<=20?1-.025*l:.5*Math.pow(.975,l-20);
 const DMG_K=2.2;
 /* Tiempo efectivo de dificultad: al empezar los enemigos ya son como los del minuto 2 y se funde con la curva normal hacia el minuto 7 */
 const eT=t=>t+120*Math.max(0,1-t/420);
-const HPK=.34;   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
+const HPK=.34;
+/* Dificultad: multiplicadores globales (ajustables) */
+const DIFF={hp:1,spawn:1,dmg:1,pow:0,late:.33,sl:.1,dl:.06};   /* late/sl/dl: crecimiento extra por minuto pasado el minuto 6 (vida, cantidad y daño) */   /* pow: crecimiento extra de vida enemiga por nivel del jugador */
+const powK=()=>1+DIFF.pow*Math.max(0,(G?G.lvl:1)-10);   /* crecimiento exponencial de la vida enemiga a partir del minuto 5 */
 /* A partir del minuto 6 salen menos enemigos pero cada uno es más fuerte (misma dificultad total, menos carga para el equipo) */
 const cntF=t=>{const m=eT(t)/60;return m<=6?1:Math.max(.4,1-.6*(m-6)/10)};
-const spawnRate=t=>{const m=eT(t)/60;return 1.25*(1+.12*Math.min(20,Math.max(0,m-3)))*Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))*cntF(t)};
-const hpScale=t=>{const m=eT(t)/60;return 1.25*(m<2?1+.35*m:m<5?1.7+.5*(m-2):3.2*Math.exp(HPK*(m-5)))};
+const spawnRate=t=>{const m=eT(t)/60;return DIFF.spawn*Math.exp(DIFF.sl*Math.max(0,m-6))*1.25*(1+.12*Math.min(20,Math.max(0,m-3)))*Math.min(12,m<2?.3+.25*m:m<5?.8+.3*(m-2):1.7+.35*Math.pow(m-5,1.15))*cntF(t)};
+const hpScale=t=>{const m=eT(t)/60;return DIFF.hp*powK()*Math.exp(DIFF.late*Math.max(0,m-6))*1.25*(m<2?1+.35*m:m<5?1.7+.5*(m-2):3.2*Math.exp(HPK*(m-5)))};
 const XPK=1.5,GOLDK=.6;   /* más experiencia y menos oro por enemigo */
-const foeDmg=t=>{const m=eT(t)/60;return .69*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
+const foeDmg=t=>{const m=eT(t)/60;return DIFF.dmg*Math.exp(DIFF.dl*Math.max(0,m-6))*.69*(1+.3*m+.015*m*m)*(m<2?.55+.225*m:1)};
 const rampMult=l=>l>=12?1:.8+.2*(l-1)/11;   /* inicio más lento: el daño sube con el nivel */
 /* Poderes automáticos: se desbloquean con el nivel compartido de las torres. */
 /* Poderes de la torre: se desbloquean con el nivel de la torre (3, 6, 9... 27) */
@@ -559,7 +562,7 @@ function newGame(hero,hero2){
   for(const i of ITEMS)G.items[i.id]=0;
   for(const sp of SPS){G.spCd[sp.id]=0;G.spLv[sp.id]=1}
   G.zones=[];G.delayed=[];G.haste=0;G.eshots=[];
-  G.tower={lvl:1,xp:0,cd:.5,shotAt:-9,aim:0,hp:300+75,dead:false};G.org=null;G.orgN=0;
+  G.tower={lvl:1,xp:0,cd:.5,shotAt:-9,aim:0,hp:500,dead:false};G.org=null;G.orgN=0;
   G.hero=hero0;G.cls={};for(const a of CLS[hero0])G.cls[a.id]=0;
   G.ht={};G.walls=null;G.mines=[];G.turrets=[];G.sdrags=[];G.aim=0;
   /* dos héroes: el A usa el estado normal de G; el B vive en G.hs y se intercambia con heroCtx(1,...) */
@@ -654,6 +657,17 @@ function spawnWave(){
   const nb=Math.min(8,2+Math.floor(eT(G.t)/60/2));
   for(let i=0;i<nb&&G.enemies.length<enemyCap()+nb;i++)spawnEnemy(true,null,{a:a+(Math.random()-.5)*1.2,rad:Math.random()*120});
   txt(cx(),cy()-100,'¡Oleada de '+d.n+' con '+nb+' jefes!','#ff5a5a',22);
+}
+/* Asalto de asedio: una columna de arietes, zapadores y catapultas que va directa a las torres */
+function spawnSiege(){
+  const m=eT(G.t)/60,a=Math.random()*Math.PI*2,get=n=>EN.find(d=>d.n===n),room=()=>Math.max(0,enemyCap()+12-G.enemies.length);
+  const put=(d,n,hpK)=>{for(let i=0;i<n&&room()>0;i++)spawnEnemy(false,d,{a:a+(Math.random()-.5)*.6,rad:Math.random()*110,hpK})};
+  put(get('Ariete de asedio'),Math.min(8,2+Math.floor(m/3)),1);
+  put(get('Zapador'),Math.min(12,4+Math.floor(m/2)),.55);
+  if(eT(G.t)>=get('Catapulta').from*1.6)put(get('Catapulta'),Math.min(5,1+Math.floor(m/5)),1);
+  if(eT(G.t)>=get('Comandante orco').from*1.6)put(get('Comandante orco'),Math.min(3,1+Math.floor(m/8)),1);
+  const al=aliveTowers()[0];
+  if(al)txt(towX(al.i),towY(al.i)-110,'⚠️ ¡Asalto de asedio contra las torres!','#ff6a4a',22);
 }
 function kill(e){
   if(e.dead)return;
@@ -2268,11 +2282,13 @@ function update(dt){
   updateAutoUpgrades(dt);
   // regeneración
   eachHero(()=>{G.hp=Math.min(S.maxHp,G.hp+S.regen*dt)});
-  for(const o of aliveTowers()){const mx=towerMax();if(o.u.hp==null)o.u.hp=mx;o.u.hp=Math.min(mx,o.u.hp+mx*.004*dt)}
+  for(const o of aliveTowers()){const mx=towerMax();if(o.u.hp==null)o.u.hp=mx;o.u.hp=Math.min(mx,o.u.hp+mx*.008*dt)}
   // spawns
   const rate=spawnRate(G.t);
   G.spawnAcc+=rate*dt;
   while(G.spawnAcc>=1){G.spawnAcc--;if(G.enemies.length<(LOWQ?110:160))spawnEnemy(false)}
+  if(G.nextSiege==null)G.nextSiege=120;
+  if(G.t>=G.nextSiege){G.nextSiege+=Math.max(45,75-eT(G.t)/60*1.5);spawnSiege()}
   if(G.t>=G.nextWave){G.nextWave+=Math.max(30,55-eT(G.t)/60*2);spawnWave()}
   if(G.t>=G.nextBoss){G.nextBoss+=45;spawnEnemy(true);txt(cx(),cy()-80,'¡Llega un jefe!','#ff5a5a',22)}
   for(const i of [0,1])heroCtx(i,()=>{if(G.dead){G.deadT-=dt;if(G.deadT<=0)heroRevive();return}updateMelee(dt);if(G.basicCd-dt<=0)fireBasic();else G.basicCd-=dt});
@@ -6750,7 +6766,7 @@ const tNeed=l=>Math.round(15*Math.pow(1.33,Math.min(29,l-1))*(1+.06*Math.max(0,l
 const tLvl=()=>(G&&G.tower)?G.tower.lvl:1;
 const towerCount=()=>1+Math.floor(tLvl()/40);
 const TOWER_R=30,TOWER_DMG=.7;
-const towerMax=(l=tLvl())=>Math.round(300+75*l);
+const towerMax=(l=tLvl())=>Math.round(400+100*l);
 const aliveTowers=()=>syncTowers().map((u,i)=>({u,i})).filter(o=>!o.u.dead);
 function hurtTower(i,d){
   const u=syncTowers()[i];if(!u||u.dead||!(d>0))return;
@@ -6820,7 +6836,7 @@ function towerGainXp(a){
   T.xp+=a;
   while(T.xp>=tNeed(T.lvl)){
     T.xp-=tNeed(T.lvl);T.lvl++;
-    for(const o of aliveTowers()){const mx=towerMax();o.u.hp=Math.min(mx,(o.u.hp==null?mx:o.u.hp)+75+mx*.15)}
+    for(const o of aliveTowers()){const mx=towerMax();o.u.hp=Math.min(mx,(o.u.hp==null?mx:o.u.hp)+100+mx*.15)}
     if(SK.every(q=>G.skills[q.id]>=SKMAX)&&SPS.every(sp=>G.spLv[sp.id]>=SPMAX)){G.bonus++;txt(towX(),towY()-90,'Torre: todo al máximo +10% daño','#ffd24a',16)}else G.tpending++;
     txt(towX(),towY()-80,'🗼 ¡Torre Nv '+T.lvl+'!','#9fd0ff',20);
     for(let k=0;k<3;k++)G.fx.push({k:'ring',x:towX(),y:towY(),r:50+k*28,t:.45+k*.1,c:'#9fd0ff'});
