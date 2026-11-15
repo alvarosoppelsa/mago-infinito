@@ -515,7 +515,7 @@ function newGame(hero){
 function recalc(){
   const it=G.items;
   S.dmg=(1+.12*it.staff)*(1+.1*G.bonus)*rampMult(G.lvl);
-  S.atk=(1+.05*it.ring)*(1+.025*clv('m_med'));
+  S.atk=(1+.05*it.ring)*(1+.025*clv('m_med'))*(clv('m_med')?tf('m_med').atk:1);
   S.rk=1+.05*it.crystal;S.range=300*S.rk;
   S.maxHp=Math.round((HEROES[G.hero].hp+25+8*(G.lvl-1)+25*it.robe)*(1+.04*clv('d_armor')));
   S.regen=1.5+.6*it.amulet+.6*clv('m_med')+.3*clv('k_serene')+.25*clv('pl_aura')+.5*(clv('t_regen')?0:0)+.3*clv('w_hide')+.35*clv('u_rejuv');
@@ -523,6 +523,7 @@ function recalc(){
   S.goldM=1+.07*it.purse;
   S.def=(1-.025*it.shield)*(1-.012*clv('d_armor'))*(1-.012*clv('p_barrier'))*(1-.01*clv('k_serene'))*(1-.015*clv('pl_shield'))*(1-.014*clv('w_hide'))*(1-.012*clv('u_bark'));
   S.dodge=Math.max(clv('a_dodge')?Math.min(.25,.03+.011*clv('a_dodge')):0,clv('z_evade')?Math.min(.3,.05+.013*clv('z_evade')):0,clv('k_wind')?Math.min(.3,.04+.013*clv('k_wind')):0,clv('pl_shield')?Math.min(.25,.03+.011*clv('pl_shield')):0);
+  if(clv('a_dodge'))S.dodge=Math.min(.6,S.dodge+tf('a_dodge').dodge);
 }
 const hx=()=>W/2, hy=()=>H/2;   /* centro de la cámara */
 const cx=()=>W/2+(G&&G.bx||0), cy=()=>H/2+(G&&G.by||0);   /* posición del héroe (los luchadores cuerpo a cuerpo se mueven) */
@@ -1232,10 +1233,10 @@ function drawDragonUnit(dg,skel){
   ctx.fillStyle='#000a';ctx.fillRect(dg.x-w/2,by,w,5);ctx.fillStyle=skel?'#cfd3da':(dg.hp/dg.max>.35?'#4ac26a':'#e04050');ctx.fillRect(dg.x-w/2,by,w*Math.max(0,dg.hp/dg.max),5);
   ctx.fillStyle='#2a1f10';ctx.font='bold 11px Segoe UI,sans-serif';ctx.fillText(skel?'Esqueleto':'Nv '+dr.lvl,dg.x,by-6);
 }
-const maxSkelDragons=()=>{const l=clv('n_skeldragon');return l?1+Math.floor((l-1)/4):0};
+const maxSkelDragons=()=>{const l=clv('n_skeldragon');return l?1+Math.floor((l-1)/4)+tf('n_skeldragon').cnt:0};
 function convertSkelDragon(dg){
   if(G.hero!=='necro'||G.sdrags.length>=maxSkelDragons())return;
-  const st=dragonStats(),l=clv('n_skeldragon'),k=.7+.035*l;
+  const st=dragonStats(),l=clv('n_skeldragon'),fsd=tf('n_skeldragon'),k=(.7+.035*l)*fsd.hpm;
   G.sdrags.push({x:dg.x,y:dg.y,hp:st.max*k,max:st.max*k,r:st.r,aggro:st.aggro,atk:.5,flap:0,face:1,a:Math.random()*6.283,inv:false,dmgb:st.base*k,spd:st.spd,flame:G.dr.sk.flame,fcd:4});
   txt(dg.x,dg.y-40,'💀 ¡Dragón esqueleto!','#cfd3da',20);
   G.fx.push({k:'ring',x:dg.x,y:dg.y,r:80,t:.4,c:'#cfd3da'});
@@ -1448,7 +1449,7 @@ function updateAllies(dt){
         a.cd=k.rate;a.atkAt=G.t;a.tx=t.x;a.ty=t.y;
         const base=(a.dmgAbs!=null?a.dmgAbs:(18+4*L)*S.dmg*(a.dmgK||1))*(a.scaleT?tsc()/a.tsAt:1);
         dealDamage(t,base,k.type||(a.kind==='vamp'?'dark':'phys'));
-        if(a.kind==='vamp')G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.004+.0003*clv('n_vamp')));
+        if(a.kind==='vamp')G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.004+.0003*clv('n_vamp'))*tf('n_vamp').hm);
       }
     }else{
       const dx=tx-a.x,dy=ty-a.y,d=Math.hypot(dx,dy);
@@ -1474,7 +1475,7 @@ function wallHit(e,dist,dt){
   const n=w.segs.length,idx=Math.floor(((Math.atan2(e.y-cy(),e.x-cx())+6.283)%6.283)/6.283*n);
   const sg=w.segs[idx];if(!sg||sg.hp<=0)return false;
   sg.hp-=e.dmg*dt;
-  const th=hdmg(clv('n_wall'))*.8*tsc()*dt;if(!(e.invT>0)){G.dmgBy['Muro de huesos']=(G.dmgBy['Muro de huesos']||0)+Math.min(th,Math.max(0,e.hp));e.hp-=th;if(e.hp<=0)kill(e)}
+  const th=hdmg(clv('n_wall'))*.8*tsc()*dt*tf('n_wall').dm;if(!(e.invT>0)){G.dmgBy['Muro de huesos']=(G.dmgBy['Muro de huesos']||0)+Math.min(th,Math.max(0,e.hp));e.hp-=th;if(e.hp<=0)kill(e)}
   return true;
 }
 
@@ -1524,22 +1525,22 @@ function shot(t,dmg,b,h){
   if(h==='demon')return shotGlaive(t,dmg,b);
   let d=dmg,crit=false;
   const cl=h==='archer'?clv('a_crit'):h==='dwarf'?clv('d_crit'):h==='troll'?clv('t_crit'):0;
-  const tcf=h==='troll'?tf('t_crit'):null;if(tcf&&tcf.exec&&t.hp<t.max*tcf.exec[0])d*=tcf.exec[1];
+  const tcf=h==='troll'?tf('t_crit'):h==='archer'?tf('a_crit'):null;if(tcf&&tcf.exec&&t.hp<t.max*tcf.exec[0])d*=tcf.exec[1];
   if(cl&&Math.random()<Math.min(.8,.10+.025*cl+(tcf?tcf.critc:0))){d*=(2+.12*cl)*(tcf?tcf.critm:1);crit=true;if(tcf&&tcf.heal)G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.01)}
   const sl=h==='archer'?clv('a_stun'):h==='dwarf'?clv('d_stun'):0;
   const pl=h==='archer'?clv('a_pierce'):0;
   let p;
-  if(pl&&Math.random()<.08+.008*pl){
+  if(pl&&Math.random()<Math.min(.7,.08+.008*pl+tf('a_pierce').pc)){
     const a=Math.atan2(t.y-cy(),t.x-cx()),dm=d*.6,ex=dm*mult(t,b.type);
     p={kind:'orb',x:cx(),y:cy()-8,vx:Math.cos(a)*720,vy:Math.sin(a)*720,size:6,life:1.1,type:b.type,dmg:dm,tgt:t,exp:ex,hit:new Set(),src:'Flecha perforante',col:b.col,arrow:true};
   }else{
     const ex=d*mult(t,b.type);
     p={kind:'home',x:cx(),y:cy()-10,spd:b.spd,size:4,type:b.type,dmg:d,tgt:t,exp:ex,life:8,src:b.n,col:b.col,arrow:h==='archer'||h==='troll'};
     const po=h==='archer'?clv('a_poison'):h==='troll'?clv('t_venom'):0;
-    const tvf=h==='troll'?tf('t_venom'):null;if(po&&Math.random()<.25+.02*po+(tvf?tvf.pc:0)){p.pdps=hdmg(po)*.35*(tvf?tvf.dm:1);p.col='#82e04e';if(tvf){if(tvf.stun){p.stunC=tvf.stun[0];p.stunT=tvf.stun[1]}if(tvf.slow){const tt=t;G.delayed.push({t:.06,fn:()=>{if(!tt.dead)tt.slow={a:tvf.slow[0],t:tvf.slow[1]}}})}}}
+    const tvf=h==='troll'?tf('t_venom'):h==='archer'?tf('a_poison'):null;if(po&&Math.random()<.25+.02*po+(tvf?tvf.pc:0)){p.pdps=hdmg(po)*.35*(tvf?tvf.dm:1);p.col='#82e04e';if(tvf){if(tvf.stun){p.stunC=tvf.stun[0];p.stunT=tvf.stun[1]}if(tvf.slow){const tt=t;G.delayed.push({t:.06,fn:()=>{if(!tt.dead)tt.slow={a:tvf.slow[0],t:tvf.slow[1]}}})}}}
   }
   if(crit){p.crit=true;p.critT='¡CRÍTICO x'+f1(2+.12*cl)+'!';p.size*=1.6}
-  if(sl){p.stunC=Math.min(.3,.06+.012*sl);p.stunT=.8+.02*sl}
+  if(sl){const sf=h==='archer'?tf('a_stun'):null;p.stunC=Math.max(p.stunC||0,Math.min(.6,.06+.012*sl+(sf?sf.pc:0)));p.stunT=Math.max(p.stunT||0,(.8+.02*sl)*(sf?sf.dur:1));if(sf&&sf.slow)p.slow=sf.slow[0]}
   if(h==='paladin'){
     if(G.ht.wrathOn>0){p.dmg*=1.3;p.exp*=1.3}
     const cl=clv('pl_cleave');if(cl)p.splash=40+2*cl;
@@ -1591,7 +1592,7 @@ function fireBasic(){
   SRC=b.n;
   const dmg=(16+3.6*G.lvl)*DMG_K*S.dmg*b.m*hpw();
   let n=1,burst=1,rate=b.cd;
-  if(h==='archer'){rate/=1+.03*clv('a_aspd');n=Math.min(4,1+Math.floor(clv('a_multi')/5))}
+  if(h==='archer'){rate/=(1+.03*clv('a_aspd'))*tf('a_aspd').atk;n=Math.min(7,1+Math.floor(clv('a_multi')/5)+tf('a_multi').cnt)}
   if(h==='troll'){rate/=(1+.03*clv('t_multi'))*(1+(G.fury||0)*(.01+.003*clv('t_fury')));n=Math.min(6,1+Math.floor(clv('t_multi')/5)+tf('t_multi').cnt);if(G.ht.loaOn>0)rate/=1.5}
   if(h==='werewolf'){rate/=(1+.03*clv('w_cleave'))*(G.ht.wolfOn>0?1.5:1);n=Math.min(6,1+Math.floor(clv('w_cleave')/5)+tf('w_cleave').cnt)}
   if(h==='druid'){rate/=1+.02*clv('u_wrath');n=Math.min(5,1+Math.floor(clv('u_wrath')/7)+tf('u_wrath').cnt);if(G.ht.bearOn>0)rate/=1.2}
@@ -1634,11 +1635,13 @@ function heroOnKill(e){
   if(G.hero==='barbarian'&&clv('b_rage')){G.rage=Math.min(10+Math.floor(clv('b_rage')/2),(G.rage||0)+1);G.rageT=4}
   if(G.hero!=='necro'||G.inCorpse)return;
   const r=clv('n_raise');
-  if(r&&Math.random()<Math.min(.6,.15+.02*r)){let ns=0;for(const q of G.allies)if(q.kind==='skel')ns++;const cap=6+Math.floor(r/3);const n=Math.min(r>=16?3:r>=8?2:1,cap-ns);for(let i=0;i<n;i++)addAlly('skel',e.x+(i-1)*10,e.y,allyHp(50+10*r),hdmg(r)*1.0*tsc(),16+.4*r,'Esqueletos del nigromante').perm=true}
+  const fr=tf('n_raise');
+  if(r&&Math.random()<Math.min(.85,.15+.02*r+fr.pc)){let ns=0;for(const q of G.allies)if(q.kind==='skel')ns++;const cap=6+Math.floor(r/3)+fr.cnt*2;const n=Math.min((r>=16?3:r>=8?2:1)+fr.cnt,cap-ns);for(let i=0;i<n;i++)addAlly('skel',e.x+(i-1)*10,e.y,allyHp(50+10*r)*fr.hpm,hdmg(r)*1.0*tsc(),16+.4*r,'Esqueletos del nigromante').perm=true}
   const c=clv('n_corpse');
-  if(c&&Math.random()<Math.min(.4,.12+.01*c)){
+  const fc=tf('n_corpse');
+  if(c&&Math.random()<Math.min(.7,.12+.01*c+fc.pc)){
     const ps=SRC;G.inCorpse=true;SRC='Explosión de cadáveres';
-    const R=80+1.8*c,dm=Math.min(e.max*.35,hdmg(c)*2.5*tsc()),ex=e.x,ey=e.y;
+    const R=(80+1.8*c)*fc.rad,dm=Math.min(e.max*.35,hdmg(c)*2.5*tsc()),ex=e.x,ey=e.y;
     for(const o of G.enemies){if(o.dead||o===e)continue;if((o.x-ex)**2+(o.y-ey)**2<=(R+o.r)**2)dealDamage(o,dm,'dark')}
     G.fx.push({k:'ring',x:ex,y:ey,r:R,t:.3,c:'#9be07b'});
     G.inCorpse=false;SRC=ps;
@@ -1652,12 +1655,12 @@ function updateHero(dt){
   let l;
   heroTick3(h,dt,T,x0,y0,rdy,done,retry);
   if(G.walls){
-    const l2=clv('n_wall'),mx2=allyHp(45+7*l2);
+    const l2=clv('n_wall'),fwl=tf('n_wall'),mx2=allyHp(45+7*l2)*fwl.hpm;
     for(const sg of G.walls.segs){
       if(sg.max!==mx2){sg.hp*=mx2/sg.max;sg.max=mx2}
       if(sg.hp>0)sg.hp=Math.min(mx2,sg.hp+mx2*(.02+.001*l2)*dt);
       else{
-        if(!sg.rt)sg.rt=Math.max(6,13-.3*l2);
+        if(!sg.rt)sg.rt=Math.max(6,13-.3*l2)*fwl.cd;
         sg.rt-=dt;
         if(sg.rt<=0){sg.hp=mx2*.4;sg.rt=0}
       }
@@ -1666,26 +1669,26 @@ function updateHero(dt){
   if(h==='mage'){
     if((l=clv('m_missiles'))&&rdy('m_missiles')){
       SRC='Misiles arcanos extra';
-      const d=hdmg(l)*.9,tg=pick(Math.min(8,2+Math.floor(l/3)),'magic',d,rg('m_missiles'));
+      const fmi=tf('m_missiles'),d=hdmg(l)*.9,tg=pick(Math.min(8+fmi.cnt,2+Math.floor(l/3)+fmi.cnt),'magic',d,rg('m_missiles'));
       if(!tg.length)retry('m_missiles');
       else{for(const t of tg){const ex=d*mult(t,'magic');G.projs.push({kind:'home',x:x0,y:y0-10,spd:430,size:5,type:'magic',dmg:d,tgt:t,exp:ex,life:6,src:'Misiles arcanos extra'});t.pending+=ex}done('m_missiles',Math.max(1.6,4-.12*l))}
     }
     if((l=clv('m_field'))){
       T.fieldTk=(T.fieldTk??0)-dt;
       if(T.fieldTk<=0){
-        T.fieldTk=.4;SRC='Campo eléctrico';
-        const R=100+3.5*l,d=hdmg(l)*.6;
+        const ffl=tf('m_field');T.fieldTk=.4*ffl.cd;SRC='Campo eléctrico';
+        const R=(100+3.5*l)*ffl.rad,d=hdmg(l)*.6;
         for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r)dealDamage(e,d,'elec')}
       }
     }
     if((l=clv('m_fireballs'))&&rdy('m_fireballs')){
       SRC='Bolas de fuego extra';
-      const d=hdmg(l)*1.1,tg=pick(1+Math.floor(l/5),'fire',d,rg('m_fireballs'));
+      const ffb=tf('m_fireballs'),d=hdmg(l)*1.1,tg=pick(1+Math.floor(l/5)+ffb.cnt,'fire',d,rg('m_fireballs'));
       if(!tg.length)retry('m_fireballs');
-      else{for(const t of tg){const ex=d*mult(t,'fire');G.projs.push({kind:'home',x:x0,y:y0-10,spd:310,size:8,type:'fire',dmg:d,burn:true,splash:50+3*l,tgt:t,exp:ex,life:6,src:'Bolas de fuego extra'});t.pending+=ex}done('m_fireballs',Math.max(1.5,3.6-.1*l))}
+      else{for(const t of tg){const ex=d*mult(t,'fire');G.projs.push({kind:'home',x:x0,y:y0-10,spd:310,size:8,type:'fire',dmg:d,burn:true,splash:(50+3*l)*ffb.rad,tgt:t,exp:ex,life:6,src:'Bolas de fuego extra'});t.pending+=ex}done('m_fireballs',Math.max(1.5,3.6-.1*l))}
     }
     if((l=clv('m_freeze'))&&rdy('m_freeze')){
-      const R=170+3*l;
+      const ffr=tf('m_freeze'),R=(170+3*l)*ffr.rad;
       if(countNear(x0,y0,150+2*l)<3)retry('m_freeze');
       else{
         SRC='Congelación';const d=hdmg(l)*.8;
@@ -1693,37 +1696,39 @@ function updateHero(dt){
           if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);
           if(dd>R+e.r)continue;
           dealDamage(e,d,'ice');
-          if(!e.dead){e.stun=1.2+.06*l;if(dd>1){e.x+=dx/dd*110;e.y+=dy/dd*110}}
+          if(!e.dead){e.stun=(1.2+.06*l)*ffr.dur;if(dd>1){e.x+=dx/dd*110;e.y+=dy/dd*110}}
         }
         G.fx.push({k:'ring',x:x0,y:y0,r:R,t:.35,c:'#7fd6ff'});
         done('m_freeze',Math.max(8,16-.4*l));
       }
     }
     if((l=clv('m_shield'))&&rdy('m_shield')){
-      G.shield=Math.max(G.shield,S.maxHp*(.12+.01*l));
+      G.shield=Math.max(G.shield,S.maxHp*(.12+.01*l)*tf('m_shield').shm);
       G.fx.push({k:'ring',x:x0,y:y0,r:44,t:.3,c:'#7fd6ff'});
       done('m_shield',Math.max(10,22-.6*l));
     }
     if((l=clv('m_golems'))&&rdy('m_golems')){
       if(countNear(x0,y0,rg('m_golems'))<2)retry('m_golems');
       else{
-        const n=2+Math.floor(l/8);
-        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('golem',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(220+45*l),hdmg(l)*1.1,25+.5*l,'Golems de piedra')}
+        const fgo=tf('m_golems'),n=2+Math.floor(l/8)+fgo.cnt;
+        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('golem',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(220+45*l)*fgo.hpm,hdmg(l)*1.1,(25+.5*l)*fgo.dur,'Golems de piedra')}
         G.fx.push({k:'ring',x:x0,y:y0,r:60,t:.3,c:'#b0b6c4'});
         done('m_golems',Math.max(18,34-.8*l));
       }
     }
     if((l=clv('m_nova'))&&rdy('m_nova')){
-      if(countNear(x0,y0,rg('m_nova'))<6)retry('m_nova');
+      const fno=tf('m_nova'),RN=rg('m_nova')*fno.rad;
+      if(countNear(x0,y0,RN)<6)retry('m_nova');
       else{
-        SRC='Supernova arcana';const d=hdmg(l)*4;
-        for(const e of G.enemies){
-          if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);
-          if(dd>rg('m_nova')+e.r)continue;
-          dealDamage(e,d,'magic');
-          if(!e.dead&&dd>1){e.x+=dx/dd*50;e.y+=dy/dd*50}
-        }
-        G.fx.push({k:'ring',x:x0,y:y0,r:rg('m_nova'),t:.4,c:'#b684ff'});G.fx.push({k:'ring',x:x0,y:y0,r:rg('m_nova')*.6,t:.4,c:'#ffffff'});
+        const pulse=k=>{SRC='Supernova arcana';const d=hdmg(l)*4*(k?.7:1);
+          for(const e of G.enemies){
+            if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);
+            if(dd>RN+e.r)continue;
+            dealDamage(e,d,'magic');
+            if(!e.dead&&dd>1){e.x+=dx/dd*50;e.y+=dy/dd*50}
+          }
+          G.fx.push({k:'ring',x:x0,y:y0,r:RN,t:.4,c:'#b684ff'});G.fx.push({k:'ring',x:x0,y:y0,r:RN*.6,t:.4,c:'#ffffff'})};
+        pulse(0);for(let k=1;k<=fno.cnt;k++)G.delayed.push({t:.6*k,fn:()=>pulse(k)});
         txt(x0,y0-70,'★ ¡Supernova!','#b684ff',18);
         done('m_nova',Math.max(25,48-1.2*l));
       }
@@ -1732,29 +1737,31 @@ function updateHero(dt){
     if((l=clv('a_rain'))&&rdy('a_rain')){
       if(countNear(x0,y0,rg('a_rain'))<2)retry('a_rain');
       else{
-        const sp=bestSpot(100,rg('a_rain')+30);
+        const fra=tf('a_rain'),sp=bestSpot(100,rg('a_rain')+30),pts=[sp];
+        const nearR=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=rg('a_rain'));
+        for(let k=0;k<fra.cnt&&nearR.length;k++){const e=nearR[Math.floor(Math.random()*nearR.length)];pts.push({x:e.x,y:e.y})}
         SRC='Lluvia de flechas';
-        G.zones.push({kind:'rain',x:sp.x,y:sp.y,r:100+2*l,t:3+.1*l,dps:hdmg(l)*3,type:'phys',tk:0,src:'Lluvia de flechas',fill:'#c8a25a33',edge:'#c8a25a'});
+        for(const q of pts)G.zones.push({kind:'rain',x:q.x,y:q.y,r:(100+2*l)*fra.rad,t:(3+.1*l)*fra.dur,dps:hdmg(l)*3,type:'phys',tk:0,src:'Lluvia de flechas',fill:'#c8a25a33',edge:'#c8a25a'});
         done('a_rain',Math.max(8,16-.5*l));
       }
     }
   }else if(h==='necro'){
     if((l=clv('n_vamp'))){
-      const want=Math.min(6,2+Math.floor(l/4));
+      const fva=tf('n_vamp'),want=Math.min(6+fva.cnt,2+Math.floor(l/4)+fva.cnt);
       let have=0;for(const a of G.allies)if(a.kind==='vamp')have++;
-      if(have<want){T.vampT=(T.vampT??1.5)-dt;if(T.vampT<=0){T.vampT=3.5;{const v=addAlly('vamp',x0,y0,allyHp(90+15*l),hdmg(l)*1.1*tsc(),1e9,'Vampiros');v.scaleT=true}}}
+      if(have<want){T.vampT=(T.vampT??1.5)-dt;if(T.vampT<=0){T.vampT=3.5;{const v=addAlly('vamp',x0,y0,allyHp(90+15*l)*fva.hpm,hdmg(l)*1.1*tsc(),1e9,'Vampiros');v.scaleT=true}}}
     }
     if((l=clv('n_mummy'))&&rdy('n_mummy')){
       if(countNear(x0,y0,rg('n_mummy'))<2)retry('n_mummy');
       else{
-        const n=2+Math.floor(l/6);
-        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('mummy',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(200+38*l),hdmg(l)*1.0*tsc(),30+.5*l,'Momias')}
+        const fmu=tf('n_mummy'),n=2+Math.floor(l/6)+fmu.cnt;
+        for(let i=0;i<n;i++){const a=Math.random()*6.283;addAlly('mummy',x0+Math.cos(a)*45,y0+Math.sin(a)*45,allyHp(200+38*l)*fmu.hpm,hdmg(l)*1.0*tsc(),(30+.5*l)*fmu.dur,'Momias')}
         G.fx.push({k:'ring',x:x0,y:y0,r:60,t:.3,c:'#d8c79a'});
         done('n_mummy',Math.max(14,26-.6*l));
       }
     }
     if((l=clv('n_wall'))&&!G.walls){
-      const mx=allyHp(45+7*l),segs=[];
+      const mx=allyHp(45+7*l)*tf('n_wall').hpm,segs=[];
       for(let i=0;i<14;i++)segs.push({hp:mx,max:mx,rt:0});
       G.walls={R:82,segs};
       for(const e of G.enemies){
@@ -1769,7 +1776,7 @@ function updateHero(dt){
       T.pestTk=(T.pestTk??0)-dt;
       if(T.pestTk<=0){
         T.pestTk=.5;SRC='Pestilencia';
-        const R=120+4*l,d=hdmg(l)*.4*tsc(),sl=Math.min(.65,.3+.015*l);
+        const R=(120+4*l)*tf('n_pest').rad,d=hdmg(l)*.4*tsc(),sl=Math.min(.65,.3+.015*l);
         for(const e of G.enemies){
           if(e.dead||Math.hypot(e.x-x0,e.y-y0)>R+e.r)continue;
           if(mult(e,'dark')>0)dealDamage(e,d*1.3,'dark');
@@ -1780,7 +1787,8 @@ function updateHero(dt){
     if((l=clv('n_curse'))&&rdy('n_curse')){
       if(countNear(x0,y0,rg('n_curse'))<2)retry('n_curse');
       else{
-        for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>rg('n_curse'))continue;e.vt=G.t+8+.25*l;e.vm=1.3+.025*l}
+        const fcu=tf('n_curse');
+        for(const e of G.enemies){if(e.dead||Math.hypot(e.x-x0,e.y-y0)>rg('n_curse'))continue;e.vt=G.t+(8+.25*l)*fcu.dur;e.vm=1.3+.025*l+fcu.vmx}
         G.fx.push({k:'ring',x:x0,y:y0,r:rg('n_curse'),t:.35,c:'#a050d0'});
         done('n_curse',Math.max(9,18-.5*l));
       }
@@ -2885,14 +2893,14 @@ const SRCMAP={};
 function defTiers(id,src,arr){TIERS[id]=arr;if(src){TIERNAME[id]=src;SRCMAP[src]=id}}
 let TFC={g:null,v:-1,c:{}};
 function tf(id){
-  if(!G)return{dm:1,rad:1,dur:1,cd:1,cnt:0,hpm:1,hm:1,def:1,shm:1,reg:0};
+  if(!G)return{dm:1,rad:1,dur:1,cd:1,cnt:0,hpm:1,hm:1,def:1,shm:1,reg:0,atk:1,dodge:0,pc:0,vmx:0};
   if(TFC.g!==G||TFC.v!==(G.tv||0)){TFC={g:G,v:G.tv||0,c:{}}}
   let o=TFC.c[id];if(o)return o;
-  o={dm:1,rad:1,dur:1,cd:1,cnt:0,hpm:1,hm:1,def:1,shm:1,reg:0,vmx:0,pc:0,critc:0,critm:1,scap:0};
+  o={dm:1,rad:1,dur:1,cd:1,cnt:0,hpm:1,hm:1,def:1,shm:1,reg:0,vmx:0,pc:0,critc:0,critm:1,scap:0,atk:1,dodge:0};
   const T=TIERS[id],l=clv(id);
   if(T)for(let i=0;i<4;i++){if(l<TIER_LV[i])break;const f=T[i][2];
-    for(const k in f){const v=f[k];if(k==='dm'||k==='rad'||k==='dur'||k==='cd'||k==='hpm'||k==='hm'||k==='def'||k==='shm'||k==='critm')o[k]*=v;
-      else if(k==='cnt'||k==='reg'||k==='vmx'||k==='pc'||k==='critc'||k==='scap'||k==='kheal'||k==='cheal'||k==='haste'||k==='heal'||k==='burn'||k==='mark')o[k]=(o[k]||0)+v;else o[k]=v}}
+    for(const k in f){const v=f[k];if(k==='dm'||k==='rad'||k==='dur'||k==='cd'||k==='hpm'||k==='hm'||k==='def'||k==='shm'||k==='critm'||k==='atk')o[k]*=v;
+      else if(k==='cnt'||k==='dodge'||k==='reg'||k==='vmx'||k==='pc'||k==='critc'||k==='scap'||k==='kheal'||k==='cheal'||k==='haste'||k==='heal'||k==='burn'||k==='mark')o[k]=(o[k]||0)+v;else o[k]=v}}
   TFC.c[id]=o;return o;
 }
 let INTIER=false;
@@ -2983,6 +2991,50 @@ CLS.werewolf.splice(7,0,
 CLS.druid.splice(7,0,
  {id:'u_cyclone',n:'Ciclón',icon:'🌪️',desc:'Atrapas a los enemigos más fuertes en un ciclón: quedan aturdidos y heridos.',eff:l=>(1+Math.floor(l/6))+' objetivo(s) · aturde '+f1(2.5+.08*l)+' s · cada '+f1(Math.max(9,18-.45*l))+' s'},
  {id:'u_swarm',n:'Enjambre',icon:'🐝',desc:'Un enjambre de insectos cubre al mayor grupo de enemigos y los devora poco a poco.',eff:l=>'Radio '+Math.round(80+2*l)+' · dura '+f1(5+.15*l)+' s · cada '+f1(Math.max(12,22-.5*l))+' s'});
+/* ===== TANDA 2: mago, arquero, nigromante — 2 habilidades nuevas y 4 mejoras por habilidad ===== */
+/* ---- mejoras: Mago ---- */
+defTiers('m_missiles','Misiles arcanos extra',[['Salva doble','+2 misiles por salva.',{cnt:2}],['Misiles rebotantes','Cada misil rebota a 2 enemigos cercanos (50% de daño).',{chain:2}],['Misiles explosivos','+35% de daño y explotan en área.',{dm:1.35,splash:[60,.4]}],['Tormenta arcana','+3 misiles, +40% de daño y -25% de enfriamiento.',{cnt:3,dm:1.4,cd:.75}]]);
+defTiers('m_field','Campo eléctrico',[['Campo amplio','+30% de radio.',{rad:1.3}],['Descarga paralizante','+50% de daño y ralentiza un 30%.',{dm:1.5,slow:[.3,1]}],['Tormenta estática','Pulsa un 30% más rápido y a veces aturde.',{cd:.7,stun:[.08,.5]}],['Campo supremo','+60% de daño y +30% de radio.',{dm:1.6,rad:1.3}]]);
+defTiers('m_fireballs','Bolas de fuego extra',[['Bola extra','+1 bola de fuego.',{cnt:1}],['Llama voraz','+40% de daño y quemaduras más fuertes.',{dm:1.4,burn:.4}],['Meteoritos','+1 bola y explosión un 30% mayor.',{cnt:1,rad:1.3}],['Infierno','+50% de daño, -30% de enfriamiento y +1 bola.',{dm:1.5,cd:.7,cnt:1}]]);
+defTiers('m_freeze','Congelación',[['Escarcha amplia','+30% de radio.',{rad:1.3}],['Hielo profundo','+50% de duración de la congelación.',{dur:1.5}],['Escarcha cortante','+100% de daño y ejecuta a los de menos del 20% de vida.',{dm:2,exec:[.2,2]}],['Cero absoluto','-35% de enfriamiento, +50% de duración y onda gélida.',{cd:.65,dur:1.5,nova:[2,260]}]]);
+defTiers('m_shield','Escudo arcano',[['Barrera gruesa','El escudo es un 50% mayor.',{shm:1.5}],['Recarga rápida','-30% de enfriamiento.',{cd:.7}],['Barrera reflectante','Al crearlo lanza una onda de choque.',{nova:[1.5,150]}],['Égida arcana','Escudo +50%, +4 vida/s y -10% de daño recibido.',{shm:1.5,reg:4,def:.9}]]);
+defTiers('m_golems','Golems de piedra',[['Golem extra','+1 golem.',{cnt:1}],['Golems de granito','+50% de vida y +30% de daño.',{hpm:1.5,dm:1.3}],['Golems eternos','+50% de duración.',{dur:1.5}],['Titanes','+2 golems, +50% de vida y +50% de daño.',{cnt:2,hpm:1.5,dm:1.5}]]);
+defTiers('m_med',null,[['Mente serena','+3 vida/s.',{reg:3}],['Concentración','+10% de velocidad de ataque.',{atk:1.1}],['Trance','+3 vida/s y -8% de daño recibido.',{reg:3,def:.92}],['Ascensión','+15% de velocidad de ataque, +5 vida/s y -8% de daño recibido.',{atk:1.15,reg:5,def:.92}]]);
+defTiers('m_nova','Supernova arcana',[['Supernova ardiente','+40% de daño.',{dm:1.4}],['Supernova ancha','+30% de radio.',{rad:1.3}],['Doble supernova','Una segunda explosión (70%) medio segundo después.',{cnt:1}],['Big bang','+50% de daño, -30% de enfriamiento, una explosión más y aturde 1,5 s.',{cnt:1,dm:1.5,cd:.7,stun:[1,1.5]}]]);
+defTiers('m_chain','Relámpago en cadena',[['Rayo largo','+2 saltos.',{cnt:2}],['Rayo potente','+50% de daño.',{dm:1.5}],['Rayo paralizante','Cada impacto aturde 1 s (50%).',{stun:[.5,1]}],['Tormenta de rayos','+3 saltos, +40% de daño y -30% de enfriamiento.',{cnt:3,dm:1.4,cd:.7}]]);
+defTiers('m_meteor','Meteoro infernal',[['Meteoro grande','+30% de radio.',{rad:1.3}],['Doble meteoro','Cae un meteoro más sobre otro grupo.',{cnt:1}],['Meteoro ardiente','+60% de daño y quema.',{dm:1.6,burn:.6}],['Lluvia infernal','+2 meteoros, -30% de enfriamiento y aturde 1,2 s.',{cnt:2,cd:.7,stun:[1,1.2]}]]);
+/* ---- mejoras: Arquero ---- */
+defTiers('a_crit',null,[['Ojo de halcón','+10% de prob. de crítico.',{critc:.1}],['Golpe mortal','+40% de daño crítico.',{critm:1.4}],['Cazador sediento','+10% de prob. y los críticos te curan.',{critc:.1,heal:.08}],['Ejecutor','+100% de daño a enemigos bajo el 25% de vida y +30% de crítico.',{exec:[.25,2],critm:1.3}]]);
+defTiers('a_aspd',null,[['Mano ágil','+12% de velocidad de disparo.',{atk:1.12}],['Ráfaga','+12% de velocidad de disparo.',{atk:1.12}],['Pulso firme','+15% de velocidad de disparo.',{atk:1.15}],['Lluvia veloz','+25% de velocidad de disparo.',{atk:1.25}]]);
+defTiers('a_multi','Flecha',[['Flecha extra','+1 flecha por disparo.',{cnt:1}],['Flechas potentes','+25% de daño.',{dm:1.25}],['Flechas explosivas','+1 flecha y explotan en área (40%).',{cnt:1,splash:[55,.4]}],['Tormenta de flechas','+2 flechas y +30% de daño.',{cnt:2,dm:1.3}]]);
+defTiers('a_stun',null,[['Impacto aturdidor','+8% de prob. de aturdir.',{pc:.08}],['Golpe largo','+50% de duración del aturdimiento.',{dur:1.5}],['Conmoción','+10% de prob. y las flechas ralentizan un 30%.',{pc:.1,slow:[.3,2]}],['Parálisis','+15% de prob. y +50% de duración.',{pc:.15,dur:1.5}]]);
+defTiers('a_poison',null,[['Veneno virulento','+10% de prob. y +50% de daño del veneno.',{pc:.1,dm:1.5}],['Veneno lento','El veneno ralentiza un 30%.',{slow:[.3,3]}],['Veneno paralizante','Las flechas envenenadas aturden 1 s (15%).',{stun:[.15,1]}],['Veneno letal','Veneno x2 y +25% de prob.',{dm:2,pc:.25}]]);
+defTiers('a_dodge',null,[['Pies ligeros','+5% de esquiva.',{dodge:.05}],['Reflejos','+5% de esquiva y +2 vida/s.',{dodge:.05,reg:2}],['Piel curtida','+5% de esquiva y -8% de daño recibido.',{dodge:.05,def:.92}],['Sombra veloz','+8% de esquiva, -8% de daño y +3 vida/s.',{dodge:.08,def:.92,reg:3}]]);
+defTiers('a_rain','Lluvia de flechas',[['Lluvia amplia','+30% de radio.',{rad:1.3}],['Lluvia larga','+50% de duración.',{dur:1.5}],['Doble lluvia','Cae una lluvia más sobre otro grupo.',{cnt:1}],['Diluvio','+60% de daño, -30% de enfriamiento y ralentiza.',{dm:1.6,cd:.7,slow:[.3,1]}]]);
+defTiers('a_pierce','Flecha perforante',[['Punta afilada','+8% de prob. de perforar.',{pc:.08}],['Punta de acero','+50% de daño.',{dm:1.5}],['Punta ardiente','+10% de prob., +30% de daño y quema.',{pc:.1,dm:1.3,burn:.4}],['Atravesador','+15% de prob., +50% de daño y ejecuta bajo el 30% de vida.',{pc:.15,dm:1.5,exec:[.3,2]}]]);
+defTiers('a_snipe','Disparo certero',[['Mira láser','+40% de daño.',{dm:1.4}],['Recarga ágil','-30% de enfriamiento.',{cd:.7}],['Bala perforante','+50% de daño y ejecuta bajo el 30% de vida.',{dm:1.5,exec:[.3,2]}],['Doble disparo','Un disparo más contra otro objetivo, +40% de daño y aturde 1 s.',{cnt:1,dm:1.4,stun:[1,1]}]]);
+defTiers('a_snare','Trampa de red',[['Red amplia','+30% de radio.',{rad:1.3}],['Red resistente','+50% de duración y +50% de daño.',{dur:1.5,dm:1.5}],['Doble red','Lanzas una red más sobre otro grupo.',{cnt:1}],['Red explosiva','+60% de daño, -30% de enfriamiento y onda de choque.',{dm:1.6,cd:.7,nova:[2,120]}]]);
+/* ---- mejoras: Nigromante ---- */
+defTiers('n_raise','Esqueletos del nigromante',[['Cementerio','+10% de prob. de levantar un esqueleto.',{pc:.1}],['Esqueletos de acero','+50% de vida y +30% de daño.',{hpm:1.5,dm:1.3}],['Legión','+1 esqueleto por muerte y más límite.',{cnt:1}],['Ejército de huesos','+10% de prob., +1 esqueleto, +40% de daño y +50% de vida.',{pc:.1,cnt:1,dm:1.4,hpm:1.5}]]);
+defTiers('n_vamp','Vampiros',[['Murciélago extra','+1 vampiro.',{cnt:1}],['Vampiros feroces','+40% de daño y +40% de vida.',{dm:1.4,hpm:1.4}],['Sed de sangre','Te curan el doble al morder.',{hm:2}],['Colmena de sangre','+2 vampiros, +40% de daño y curación x1,5.',{cnt:2,dm:1.4,hm:1.5}]]);
+defTiers('n_mummy','Momias',[['Momia extra','+1 momia.',{cnt:1}],['Momias selladas','+50% de vida.',{hpm:1.5}],['Maldición faraónica','+50% de duración y +30% de daño.',{dur:1.5,dm:1.3}],['Guardia del faraón','+1 momia, +50% de daño, +50% de vida y -25% de enfriamiento.',{cnt:1,dm:1.5,hpm:1.5,cd:.75}]]);
+defTiers('n_skeldragon','Dragón esqueleto',[['Dragón extra','+1 dragón esqueleto.',{cnt:1}],['Escamas de hueso','+40% de fuerza (vida y daño).',{hpm:1.4}],['Aliento mortal','+40% de daño de su fuego.',{dm:1.4}],['Dragón ancestral','+1 dragón, +40% de daño y +40% de fuerza.',{cnt:1,dm:1.4,hpm:1.4}]]);
+defTiers('n_wall','Muro de huesos',[['Huesos duros','+50% de resistencia del muro.',{hpm:1.5}],['Espinas de hueso','El doble de daño a quien lo ataca.',{dm:2}],['Muro regenerador','Se reconstruye un 40% más rápido y +50% de resistencia.',{cd:.6,hpm:1.5}],['Fortaleza de huesos','Espinas x2, +50% de resistencia y -10% de daño recibido.',{dm:2,hpm:1.5,def:.9}]]);
+defTiers('n_pest','Pestilencia',[['Nube amplia','+30% de radio.',{rad:1.3}],['Peste virulenta','+60% de daño.',{dm:1.6}],['Peste paralizante','Aturde brevemente a los enfermos.',{stun:[.04,.6]}],['Plaga negra','+30% de radio, +60% de daño y te cura con el daño.',{rad:1.3,dm:1.6,heal:.04}]]);
+defTiers('n_curse','Maldición',[['Maldición profunda','+15% de daño recibido por los malditos.',{vmx:.15}],['Maldición duradera','+50% de duración.',{dur:1.5}],['Maldición letal','+20% de daño recibido y -25% de enfriamiento.',{vmx:.2,cd:.75}],['Condena','+25% de daño recibido, +50% de duración y onda de choque al lanzarla.',{vmx:.25,dur:1.5,nova:[1.5,200]}]]);
+defTiers('n_corpse','Explosión de cadáveres',[['Cadáveres inestables','+30% de radio.',{rad:1.3}],['Cadáveres tóxicos','+60% de daño.',{dm:1.6}],['Epidemia','+10% de prob. de explosión.',{pc:.1}],['Cadena de explosiones','+10% de prob., +50% de daño y +30% de radio.',{pc:.1,dm:1.5,rad:1.3}]]);
+defTiers('n_drain','Drenar vida',[['Drenaje largo','+40% de duración.',{dur:1.4}],['Doble drenaje','+2 objetivos.',{cnt:2}],['Sed insaciable','+60% de daño y curas casi el doble.',{dm:1.6,hm:1.8}],['Cosecha de almas','+2 objetivos, +50% de daño, -30% de enfriamiento y escudo del 15%.',{cnt:2,dm:1.5,cd:.7,shield:.15}]]);
+defTiers('n_spear','Lanza de huesos',[['Lanza extra','Lanzas una lanza más.',{cnt:1}],['Lanza afilada','+50% de daño.',{dm:1.5}],['Lanza del abismo','Ralentiza un 40% y a veces aturde.',{slow:[.4,3],stun:[.25,1]}],['Lluvia de huesos','+2 lanzas, +40% de daño, -30% de enfriamiento y explota.',{cnt:2,dm:1.4,cd:.7,splash:[60,.5]}]]);
+Object.assign(RNG,{m_chain:380,m_meteor:420,a_snipe:520,a_snare:380,n_drain:300,n_spear:400});
+CLS.mage.splice(7,0,
+ {id:'m_chain',n:'Relámpago en cadena',icon:'🌩️',desc:'Un rayo salta de enemigo en enemigo y golpea a todos los que encuentra.',eff:l=>'Golpea a '+(4+Math.floor(l/5))+' enemigos · daño x1,4 · cada '+f1(Math.max(4,9-.25*l))+' s'},
+ {id:'m_meteor',n:'Meteoro infernal',icon:'☄️',desc:'Marca un grupo de enemigos y hace caer un meteoro: daño enorme en área y quemadura.',eff:l=>'Radio '+Math.round(80+2*l)+' · daño x3,2 · cada '+f1(Math.max(8,16-.4*l))+' s'});
+CLS.archer.splice(7,0,
+ {id:'a_snipe',n:'Disparo certero',icon:'🎯',desc:'Un disparo potentísimo contra el enemigo más fuerte que atraviesa a todos los de su línea.',eff:l=>'Daño x5 en línea · cada '+f1(Math.max(7,14-.35*l))+' s'},
+ {id:'a_snare',n:'Trampa de red',icon:'🕸️',desc:'Lanzas una red sobre el mayor grupo: quedan inmovilizados y heridos, y la red sigue dañándolos.',eff:l=>'Radio '+Math.round(70+2*l)+' · inmoviliza '+f1(3+.1*l)+' s · cada '+f1(Math.max(9,17-.4*l))+' s'});
+CLS.necro.splice(7,0,
+ {id:'n_drain',n:'Drenar vida',icon:'🧛',desc:'Drenas la vida de los enemigos más fuertes durante unos segundos y la conviertes en tu propia vida.',eff:l=>(2+Math.floor(l/6))+' objetivos · '+f1(3+.08*l)+' s · cada '+f1(Math.max(9,17-.4*l))+' s'},
+ {id:'n_spear',n:'Lanza de huesos',icon:'🦴',desc:'Lanzas una enorme lanza de hueso que atraviesa a todos los enemigos en línea.',eff:l=>'Daño x2,4 en línea · cada '+f1(Math.max(4,9-.25*l))+' s'});
 /* ---- lógica de habilidades (reemplaza la de la tanda anterior) ---- */
 function heroKill3(e){
   const h=G.hero,T=G.ht;
@@ -2998,7 +3050,7 @@ function heroTick3(h,dt,T,x0,y0,rdy,done,retry){
   if(G.tdv!==(G.tv||0))tierRecalc();
   if(G.trg)G.hp=Math.min(S.maxHp,G.hp+G.trg*dt);
   if(G.furyT>0){G.furyT-=dt;if(G.furyT<=0)G.fury=0}
-  if(h!=='troll'&&h!=='werewolf'&&h!=='druid')return;
+  if(h!=='troll'&&h!=='werewolf'&&h!=='druid'&&h!=='mage'&&h!=='archer'&&h!=='necro')return;
   let l,f;const ring=(x,y,r,c,t)=>G.fx.push({k:'ring',x,y,r,t:t||.4,c});
   const bolt=(e,c)=>G.fx.push({k:'bolt',pts:[[e.x,e.y-130],[e.x,e.y]],t:.22,c});
   const inR=(R)=>G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=R);
@@ -3152,6 +3204,81 @@ function heroTick3(h,dt,T,x0,y0,rdy,done,retry){
         ring(x0,y0,R,'#c8a070',.3);if(hit)ring(x0,y0,R*.6,'#ffffff',.25)}
     }
   }
+  /* ---- tanda 2: habilidades nuevas del mago, el arquero y el nigromante ---- */
+  const lineHit=(a,len,w,fn)=>{for(const e of G.enemies){if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,al=dx*Math.cos(a)+dy*Math.sin(a),pp=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));if(al<0||al>len||pp>e.r+w)continue;fn(e)}};
+  if(h==='mage'){
+    if((l=clv('m_chain'))&&rdy('m_chain')){
+      f=tf('m_chain');const first=inR(rg('m_chain')).sort((a,b)=>b.hp-a.hp)[0];
+      if(!first)retry('m_chain');
+      else{SRC='Relámpago en cadena';let d=hdmg(l)*1.4,cur=first;const jumps=3+Math.floor(l/5)+f.cnt,hit=new Set([first]),pts=[[x0,y0-20]];
+        for(let i=0;i<=jumps&&cur;i++){
+          pts.push([cur.x,cur.y]);dealDamage(cur,d,'elec');d*=.9;
+          let nx=null,bd=180*180;for(const o of G.enemies){if(o.dead||hit.has(o))continue;const dd=(o.x-cur.x)**2+(o.y-cur.y)**2;if(dd<bd){bd=dd;nx=o}}
+          if(nx)hit.add(nx);cur=nx}
+        G.fx.push({k:'bolt',pts,t:.4,c:'#8fd0ff'});G.fx.push({k:'bolt',pts,t:.3,c:'#ffffff'});
+        for(let i=1;i<pts.length;i++)ring(pts[i][0],pts[i][1],20,'#bfe6ff',.3);
+        txt(x0,y0-70,'🌩️ ¡Cadena!','#bfe6ff',16);done('m_chain',Math.max(4,9-.25*l))}
+    }
+    if((l=clv('m_meteor'))&&rdy('m_meteor')){
+      f=tf('m_meteor');const R=(80+2*l)*f.rad,used=[];let did=0;
+      for(let k=0;k<1+f.cnt;k++){const b=bestCluster(rg('m_meteor'),R,used);if(!b)break;used.push(b);did++;
+        const X=b.x,Y=b.y,d=hdmg(l)*3.2,tt=.9+.15*k;
+        G.fx.push({k:'meteor',x:X,y:Y,t:tt,d:tt});
+        G.delayed.push({t:tt,mark:{x:X,y:Y,r:R},fn:()=>{SRC='Meteoro infernal';
+          for(const e of G.enemies){if(e.dead||Math.hypot(e.x-X,e.y-Y)>R+e.r)continue;dealDamage(e,d,'fire');if(!e.dead)addDot(e,'fire',d*.2,4,false)}
+          ring(X,Y,R,'#ff7a2a',.5);ring(X,Y,R*.6,'#ffe27a',.4);
+          if(G.fx.length<280)for(let q=0;q<14;q++){const an=q/14*6.283;G.fx.push({k:'p',x:X,y:Y,vx:Math.cos(an)*150,vy:Math.sin(an)*150,t:.6,c:'#ff9a3d'})}}})}
+      if(!did)retry('m_meteor');else{txt(x0,y0-70,'☄️ ¡Meteoro!','#ffb070',18);done('m_meteor',Math.max(8,16-.4*l))}
+    }
+  }
+  if(h==='archer'){
+    if((l=clv('a_snipe'))&&rdy('a_snipe')){
+      f=tf('a_snipe');const cs=inR(rg('a_snipe')).sort((a,b)=>b.hp-a.hp).slice(0,1+f.cnt);
+      if(!cs.length)retry('a_snipe');
+      else{SRC='Disparo certero';const d=hdmg(l)*5,L=rg('a_snipe')+40;
+        for(const t of cs){const a=Math.atan2(t.y-y0,t.x-x0);
+          lineHit(a,L,14,e=>{dealDamage(e,e===t?d:d*.6,'phys');ring(e.x,e.y,e.r+8,'#ffd24a',.25)});
+          G.fx.push({k:'bolt',pts:[[x0,y0-10],[x0+Math.cos(a)*L,y0-10+Math.sin(a)*L]],t:.35,c:'#ffe9a8'});
+          G.fx.push({k:'bolt',pts:[[x0,y0-10],[x0+Math.cos(a)*L,y0-10+Math.sin(a)*L]],t:.25,c:'#ffffff'});
+          txt(t.x,t.y-t.r-14,'🎯','#ffd24a',20)}
+        txt(x0,y0-70,'🎯 ¡Certero!','#ffd24a',16);done('a_snipe',Math.max(7,14-.35*l))}
+    }
+    if((l=clv('a_snare'))&&rdy('a_snare')){
+      f=tf('a_snare');const R=(70+2*l)*f.rad,used=[];let did=0;
+      for(let k=0;k<1+f.cnt;k++){const b=bestCluster(rg('a_snare'),R,used);if(!b)break;used.push(b);did++;
+        SRC='Trampa de red';const du=(3+.1*l)*f.dur,d=hdmg(l)*1.6;
+        for(const e of G.enemies){if(e.dead||Math.hypot(e.x-b.x,e.y-b.y)>R+e.r)continue;dealDamage(e,d,'phys');if(!e.dead)e.root=Math.max(e.root||0,du)}
+        G.zones.push({kind:'net',x:b.x,y:b.y,r:R,t:du,dps:hdmg(l)*.5,type:'phys',tk:0,src:'Trampa de red',fill:'#e8e8d018',edge:'#e8e8d0'});
+        ring(b.x,b.y,R,'#e8e8d0',.45);txt(b.x,b.y-30,'🕸️','#e8e8d0',18)}
+      if(!did)retry('a_snare');else done('a_snare',Math.max(9,17-.4*l))
+    }
+  }
+  if(h==='necro'){
+    if((l=clv('n_drain'))&&rdy('n_drain')){
+      f=tf('n_drain');const cs=inR(rg('n_drain')).sort((a,b)=>b.hp-a.hp).slice(0,2+Math.floor(l/6)+f.cnt);
+      if(!cs.length)retry('n_drain');
+      else{T.drainOn=(3+.08*l)*f.dur;T.drainTg=cs;T.drainTk=0;txt(x0,y0-80,'🧛 ¡Drenar vida!','#e05a8a',18);ring(x0,y0,70,'#e05a8a',.4);done('n_drain',Math.max(9,17-.4*l))}
+    }
+    if(T.drainOn>0&&(l=clv('n_drain'))){
+      f=tf('n_drain');T.drainOn-=dt;T.drainTk-=dt;
+      if(T.drainTk<=0){T.drainTk=.3;SRC='Drenar vida';let got=0;
+        T.drainTg=(T.drainTg||[]).filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=rg('n_drain')+80);
+        for(const e of T.drainTg){const hp0=e.hp;dealDamage(e,hdmg(l)*.55*tsc(),'dark');got+=Math.max(0,hp0-e.hp);
+          if(G.fx.length<300)G.fx.push({k:'bolt',pts:[[e.x,e.y],[(e.x+x0)/2+(Math.random()-.5)*34,(e.y+y0)/2+(Math.random()-.5)*34],[x0,y0-10]],t:.3,c:'#e05a8a'})}
+        if(got>0)G.hp=Math.min(S.maxHp,G.hp+got*.25*f.hm)}
+    }
+    if((l=clv('n_spear'))&&rdy('n_spear')){
+      f=tf('n_spear');const cs=inR(rg('n_spear')).sort((a,b)=>b.hp-a.hp);
+      if(!cs.length)retry('n_spear');
+      else{SRC='Lanza de huesos';const d=hdmg(l)*2.4*tsc(),L=rg('n_spear')+60;
+        for(let k=0;k<1+f.cnt;k++){const t=cs[Math.min(k,cs.length-1)],a=Math.atan2(t.y-y0,t.x-x0)+(k>=cs.length?(k%2?.4:-.4):0);
+          lineHit(a,L,12,e=>{dealDamage(e,d,'phys');ring(e.x,e.y,e.r+6,'#f0ead0',.25)});
+          const ex=x0+Math.cos(a)*L,ey=y0+Math.sin(a)*L;
+          G.fx.push({k:'bolt',pts:[[x0,y0],[x0+Math.cos(a)*L*.5,y0+Math.sin(a)*L*.5],[ex,ey]],t:.35,c:'#f0ead0'});
+          G.fx.push({k:'bolt',pts:[[x0,y0],[ex,ey]],t:.25,c:'#9be07b'})}
+        txt(x0,y0-70,'🦴 ¡Lanza!','#f0ead0',16);done('n_spear',Math.max(4,9-.25*l))}
+    }
+  }
 }
 /* ---- dibujo de tótems, marcas, ciclones, enjambres y furia ---- */
 function drawFx4(x0,y0){
@@ -3171,6 +3298,9 @@ function drawFx4(x0,y0){
       for(let i=0;i<4;i++){ctx.rotate(1.5708);ctx.beginPath();ctx.moveTo(R-4,0);ctx.lineTo(R+6,0);ctx.stroke()}ctx.restore();ctx.lineWidth=1}
     if(e.cyc>t){ctx.save();ctx.translate(e.x,e.y);ctx.strokeStyle='rgba(200,232,255,.8)';ctx.lineWidth=2;for(let i=0;i<3;i++){const p=(t*2.4+i/3)%1;ctx.beginPath();ctx.ellipse(0,-e.r*.4+p*e.r*1.6-e.r*.8,e.r*(.5+.8*p),e.r*.25*(.5+p),0,0,6.3);ctx.stroke()}ctx.restore();ctx.lineWidth=1}
   }
+  for(const z of G.zones)if(z.kind==='net'){ctx.strokeStyle='rgba(235,235,215,.75)';ctx.lineWidth=1.2;
+    for(let i=0;i<8;i++){const a=i*.7854;ctx.beginPath();ctx.moveTo(z.x,z.y);ctx.lineTo(z.x+Math.cos(a)*z.r,z.y+Math.sin(a)*z.r);ctx.stroke()}
+    for(let k=1;k<=3;k++){ctx.beginPath();for(let i=0;i<=8;i++){const a=i*.7854,rr=z.r*k/3*(1-.06*Math.sin(G.t*3+i));i?ctx.lineTo(z.x+Math.cos(a)*rr,z.y+Math.sin(a)*rr):ctx.moveTo(z.x+Math.cos(a)*rr,z.y+Math.sin(a)*rr)}ctx.stroke()}ctx.lineWidth=1}
   for(const z of G.zones)if(z.kind==='swarm'){ctx.fillStyle='#2a3a10';for(let i=0;i<16;i++){const a=t*(2+i%3)+i*1.7,rr=z.r*(.2+.75*((i*37)%10)/10);ctx.fillRect(z.x+Math.cos(a)*rr,z.y+Math.sin(a*1.3)*rr*.8,2.4,2.4)}}
   if(h==='troll'&&(G.fury||0)>0){const k=Math.min(1,G.fury/8);hGlow(ctx,x0,y0,40+k*14,'rgba(255,70,40,'+(.18+.3*k)+')',1);
     for(let i=0;i<Math.min(8,G.fury);i++){const a=t*3+i*.8;ctx.fillStyle='#ff6a3a';ctx.beginPath();ctx.arc(x0+Math.cos(a)*34,y0+Math.sin(a)*12+8,2.4,0,6.3);ctx.fill()}}
@@ -3294,13 +3424,13 @@ function drawClassFx(x0,y0){
     for(let i=0;i<4;i++){const a=G.t*9+i*1.571;drawAxe({x:x0+Math.cos(a)*R*.8,y:y0+Math.sin(a)*R*.8,rot:G.t*18+i,size:13})}
   }
   if(h==='mage'&&clv('m_field')){
-    const R=100+3.5*clv('m_field');
+    const R=(100+3.5*clv('m_field'))*tf('m_field').rad;
     ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='#fff04a12';ctx.fill();ctx.strokeStyle='#fff04acc';ctx.lineWidth=1.5;ctx.stroke();
     for(let i=0;i<3;i++){const a=Math.random()*6.283;ctx.beginPath();ctx.moveTo(x0+Math.cos(a)*R,y0+Math.sin(a)*R);ctx.lineTo(x0+Math.cos(a+.1)*(R-9),y0+Math.sin(a+.1)*(R-9));ctx.lineTo(x0+Math.cos(a+.2)*R,y0+Math.sin(a+.2)*R);ctx.stroke()}
     ctx.lineWidth=1;
   }
   if(h==='necro'&&clv('n_pest')){
-    const R=120+4*clv('n_pest');
+    const R=(120+4*clv('n_pest'))*tf('n_pest').rad;
     ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='rgba(120,200,80,'+(.10+.04*Math.sin(G.t*3))+')';ctx.fill();ctx.strokeStyle='#8fd05a66';ctx.stroke();
   }
   if(G.walls){
@@ -3919,6 +4049,10 @@ function draw(){
     else if(f.k==='bolt'){ctx.globalAlpha=Math.min(1,f.t*8);ctx.strokeStyle=f.c;ctx.lineWidth=3;ctx.beginPath();
       f.pts.forEach((q,i)=>{const jx=i?(Math.random()-.5)*8:0,jy=i?(Math.random()-.5)*8:0;i?ctx.lineTo(q[0]+jx,q[1]+jy):ctx.moveTo(q[0],q[1])});
       ctx.stroke();ctx.lineWidth=1;ctx.globalAlpha=1}
+    else if(f.k==='meteor'){const p=Math.min(1,Math.max(0,1-f.t/f.d)),q=1-p,mx=f.x+q*170,my=f.y-q*380;
+      ctx.strokeStyle='rgba(255,140,50,.55)';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(mx+60*q+10,my-130*q-10);ctx.stroke();
+      ctx.fillStyle='#ff6a22';ctx.beginPath();ctx.arc(mx,my,13,0,6.3);ctx.fill();ctx.fillStyle='#ffd27a';ctx.beginPath();ctx.arc(mx,my,7,0,6.3);ctx.fill();ctx.lineWidth=1;
+      ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(f.x,f.y+4,10+14*p,4+5*p,0,0,6.3);ctx.fill()}
   }
   drawHero(px,py);
   // textos
