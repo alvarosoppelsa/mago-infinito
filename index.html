@@ -525,6 +525,8 @@ function recalc(){
   S.dodge=Math.max(clv('a_dodge')?Math.min(.25,.03+.011*clv('a_dodge')):0,clv('z_evade')?Math.min(.3,.05+.013*clv('z_evade')):0,clv('k_wind')?Math.min(.3,.04+.013*clv('k_wind')):0,clv('pl_shield')?Math.min(.25,.03+.011*clv('pl_shield')):0);
   if(clv('a_dodge'))S.dodge=Math.min(.6,S.dodge+tf('a_dodge').dodge);
   if(clv('z_evade'))S.dodge=Math.min(.6,S.dodge+tf('z_evade').dodge);
+  if(clv('k_wind'))S.dodge=Math.min(.6,S.dodge+tf('k_wind').dodge);
+  if(clv('pl_shield'))S.dodge=Math.min(.6,S.dodge+tf('pl_shield').dodge);
   if(clv('d_armor'))S.maxHp=Math.round(S.maxHp*tf('d_armor').hpm);
 }
 const hx=()=>W/2, hy=()=>H/2;   /* centro de la cámara */
@@ -1285,7 +1287,7 @@ function updateSkelDragons(dt){
 /* ============ PODERES ESPECIALES, HABILIDADES DE MASCOTA Y ALIADOS ============ */
 function hurt(d){
   if(G.heroInv>0)return;
-  if(G.ht&&G.ht.bersOn>0)d*=.6;if(G.ht&&G.ht.wolfOn>0)d*=.65;if(G.ht&&G.ht.bearOn>0)d*=.4;d*=(G.tdef||1);
+  if(G.ht&&G.ht.nirvOn>0)d*=.5;if(G.ht&&G.ht.bastOn>0)d*=.35;if(G.ht&&G.ht.bersOn>0)d*=.6;if(G.ht&&G.ht.wolfOn>0)d*=.65;if(G.ht&&G.ht.bearOn>0)d*=.4;d*=(G.tdef||1);
   if(S.dodge&&Math.random()<S.dodge){if(G.t-(G.dodgeT||-9)>.8){G.dodgeT=G.t;txt(cx()+(Math.random()-.5)*30,cy()-34,'¡Esquiva!','#7be07b',13)}return}
   if(G.shield>0){const a=Math.min(G.shield,d);G.shield-=a;d-=a}
   G.hp-=d;if(d>.4)G.hurtAt=G.t;
@@ -1545,10 +1547,10 @@ function shot(t,dmg,b,h){
   if(crit){p.crit=true;p.critT='¡CRÍTICO x'+f1(2+.12*cl)+'!';p.size*=1.6}
   if(sl){const sf=h==='archer'?tf('a_stun'):h==='dwarf'?tf('d_stun'):null;p.stunC=Math.max(p.stunC||0,Math.min(.6,.06+.012*sl+(sf?sf.pc:0)));p.stunT=Math.max(p.stunT||0,(.8+.02*sl)*(sf?sf.dur:1));if(sf&&sf.slow)p.slow=sf.slow[0]}
   if(h==='paladin'){
-    if(G.ht.wrathOn>0){p.dmg*=1.3;p.exp*=1.3}
-    const cl=clv('pl_cleave');if(cl)p.splash=40+2*cl;
+    if(G.ht.wrathOn>0){const wm=1.3*tf('pl_wrath').dm;p.dmg*=wm;p.exp*=wm}
+    const cl=clv('pl_cleave'),fcl=tf('pl_cleave');if(cl){p.splash=(40+2*cl)*fcl.rad;if(fcl.dm!==1){p.dmg*=fcl.dm;p.exp*=fcl.dm}if(fcl.slow)p.slow=fcl.slow[0]}
     const hl=clv('pl_holy');
-    if(hl){const hd=p.dmg*(.25+.03*hl),tt=t;G.delayed.push({t:.06,fn:()=>{if(tt.dead)return;SRC='Espada consagrada';dealDamage(tt,hd,'divine');G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.002+.0003*hl))}})}
+    if(hl){const hd=p.dmg*(.25+.03*hl),tt=t,hhm=tf('pl_holy').hm;G.delayed.push({t:.06,fn:()=>{if(tt.dead)return;SRC='Espada consagrada';dealDamage(tt,hd,'divine');G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.002+.0003*hl)*hhm)}})}
   }
   if(h==='werewolf'){const bl=clv('w_bleed'),mo=G.ht.wolfOn>0,lf=clv('w_blood');
     if(mo){p.dmg*=1.4;p.exp*=1.4;p.col='#ff6a6a'}
@@ -1558,11 +1560,13 @@ function shot(t,dmg,b,h){
   const kc=h==='monk'?clv('k_combo'):0;
   if(kc){
     G.combo=(G.combo||0)+1;
-    if(G.combo>=(kc>=10?3:4)){
+    const fkc=tf('k_combo');
+    if(G.combo>=Math.max(2,(kc>=10?3:4)-fkc.cnt)){
       G.combo=0;const k=2+.12*kc;
-      p.dmg*=k;p.exp*=k;p.splash=50+2*kc;p.stunC=1;p.stunT=.4;p.crit=true;p.critT='👐 ¡PALMA!';p.size*=1.8;p.src='Combo de palma';p.col='#ff9a3d';
+      p.dmg*=k;p.exp*=k;p.splash=(50+2*kc)*fkc.rad;p.stunC=1;p.stunT=.4;p.crit=true;p.critT='👐 ¡PALMA!';p.size*=1.8;p.src='Combo de palma';p.col='#ff9a3d';
     }
   }
+  if(h==='monk'&&G.ht.nirvOn>0){const nm=1.3*tf('k_nirvana').dm;p.dmg*=nm;p.exp*=nm}
   G.projs.push(p);t.pending+=p.exp;
 }
 /* Luchadores cuerpo a cuerpo (monje, paladín): como el dragón, salen a buscar al enemigo
@@ -1602,8 +1606,8 @@ function fireBasic(){
   if(h==='dwarf'){rate/=(1+.04*clv('d_aspd'))*tf('d_aspd').atk;burst=Math.min(7,1+Math.floor(clv('d_multi')/5)+tf('d_multi').cnt)}
   if(h==='barbarian'){rate/=(1+.04*clv('b_aspd'))*tf('b_aspd').atk*Math.sqrt(rageMul())*(G.ht.bersOn>0?1.6:1);n=Math.min(6,1+Math.floor(clv('b_multi')/8)+tf('b_multi').cnt)}
   if(h==='demon'&&G.ht.metaOn>0)rate/=1.4*tf('z_meta').atk;
-  if(h==='monk'){rate/=1+.04*clv('k_flurry');n=Math.min(4,1+Math.floor(clv('k_flurry')/5))}
-  if(h==='paladin'&&G.ht.wrathOn>0)rate/=1.5;
+  if(h==='monk'){rate/=(1+.04*clv('k_flurry'))*tf('k_flurry').atk*(G.ht.nirvOn>0?1.5:1);n=Math.min(6,1+Math.floor(clv('k_flurry')/5)+tf('k_flurry').cnt)}
+  if(h==='paladin'&&G.ht.wrathOn>0)rate/=1.5*tf('pl_wrath').atk;
   if(HEROES[h].melee){
     /* cuerpo a cuerpo: solo golpea a quien está al alcance del brazo */
     const R=HEROES[h].melee.reach;
@@ -1943,7 +1947,7 @@ function updateHero(dt){
     if((l=clv('p_heal'))&&rdy('p_heal')){
       if(G.hp>=S.maxHp&&!G.allies.some(a=>a.hp<a.max))retry('p_heal');
       else{
-        const k=.08+.006*l;G.hp=Math.min(S.maxHp,G.hp+S.maxHp*k);
+        const k=(.08+.006*l)*tf('p_heal').hm;G.hp=Math.min(S.maxHp,G.hp+S.maxHp*k);
         for(const a of G.allies)a.hp=Math.min(a.max,a.hp+a.max*k);
         G.fx.push({k:'ring',x:x0,y:y0,r:50,t:.35,c:'#ff9ad0'});txt(x0,y0-50,'+'+Math.round(S.maxHp*k)+' 💖','#ff9ad0',14);
         done('p_heal',Math.max(5,12-.35*l));
@@ -1952,13 +1956,13 @@ function updateHero(dt){
     if((l=clv('p_halo'))){
       T.haloTk=(T.haloTk??0)-dt;
       if(T.haloTk<=0){
-        T.haloTk=.5;SRC='Halo sagrado';
-        const R=110+4*l,d=hdmg(l)*.8;
+        const fha=tf('p_halo');T.haloTk=.5*fha.cd;SRC='Halo sagrado';
+        const R=(110+4*l)*fha.rad,d=hdmg(l)*.8;
         for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r&&mult(e,'divine')>0)dealDamage(e,d,'divine')}
       }
     }
     if((l=clv('p_judge'))&&rdy('p_judge')){
-      const cs=G.enemies.filter(e=>!e.dead&&mult(e,'divine')>0&&Math.hypot(e.x-x0,e.y-y0)<=rg('p_judge')).sort((a,b)=>b.hp-a.hp).slice(0,Math.min(6,1+Math.floor(l/4)));
+      const cs=G.enemies.filter(e=>!e.dead&&mult(e,'divine')>0&&Math.hypot(e.x-x0,e.y-y0)<=rg('p_judge')).sort((a,b)=>b.hp-a.hp).slice(0,Math.min(6,1+Math.floor(l/4))+tf('p_judge').cnt);
       if(!cs.length)retry('p_judge');
       else{
         SRC='Juicio';const d=hdmg(l)*3.2;
@@ -1967,34 +1971,37 @@ function updateHero(dt){
       }
     }
     if((l=clv('p_angel'))){
-      const want=Math.min(4,1+Math.floor(l/5));
+      const fan=tf('p_angel'),want=Math.min(4+fan.cnt,1+Math.floor(l/5)+fan.cnt);
       let have=0;for(const a of G.allies)if(a.kind==='angel')have++;
-      if(have<want){T.angelT=(T.angelT??1)-dt;if(T.angelT<=0){T.angelT=3;const v=addAlly('angel',x0,y0,allyHp(110+18*l),hdmg(l)*1.2*tsc(),1e9,'Ángeles guardianes');v.scaleT=true}}
+      if(have<want){T.angelT=(T.angelT??1)-dt;if(T.angelT<=0){T.angelT=3;const v=addAlly('angel',x0,y0,allyHp(110+18*l)*fan.hpm,hdmg(l)*1.2*tsc(),1e9,'Ángeles guardianes');v.scaleT=true}}
     }
     if((l=clv('p_barrier'))&&rdy('p_barrier')){
-      G.shield=Math.max(G.shield,S.maxHp*(.10+.01*l));
+      G.shield=Math.max(G.shield,S.maxHp*(.10+.01*l)*tf('p_barrier').shm);
       G.fx.push({k:'ring',x:x0,y:y0,r:44,t:.3,c:'#ffe27a'});
       done('p_barrier',Math.max(10,20-.5*l));
     }
     if((l=clv('p_consec'))&&rdy('p_consec')){
       if(countNear(x0,y0,rg('p_consec'))<2)retry('p_consec');
       else{
-        const sp=bestSpot(90,rg('p_consec')+30);
-        G.zones.push({kind:'consec',x:sp.x,y:sp.y,r:90+2*l,t:4+.1*l,dps:hdmg(l)*2.6,type:'divine',tk:0,src:'Consagración',fill:'#ffe27a26',edge:'#ffe27a'});
+        const fco=tf('p_consec'),sp=bestSpot(90,rg('p_consec')+30),pts=[sp];
+        const nearC=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=rg('p_consec'));
+        for(let k=0;k<fco.cnt&&nearC.length;k++){const e=nearC[Math.floor(Math.random()*nearC.length)];pts.push({x:e.x,y:e.y})}
+        for(const q of pts)G.zones.push({kind:'consec',x:q.x,y:q.y,r:(90+2*l)*fco.rad,t:(4+.1*l)*fco.dur,dps:hdmg(l)*2.6,type:'divine',tk:0,src:'Consagración',fill:'#ffe27a26',edge:'#ffe27a'});
         done('p_consec',Math.max(6,12-.3*l));
       }
     }
     if((l=clv('p_purge'))&&rdy('p_purge')){
-      if(countNear(x0,y0,rg('p_purge'))<2)retry('p_purge');
+      const fpu=tf('p_purge'),RP=rg('p_purge')*fpu.rad;
+      if(countNear(x0,y0,RP)<2)retry('p_purge');
       else{
-        SRC='Purificación';const d=hdmg(l)*1.4,until=G.t+4+.15*l;
+        SRC='Purificación';const d=hdmg(l)*1.4,until=G.t+(4+.15*l)*fpu.dur;
         for(const e of G.enemies){
-          if(e.dead||Math.hypot(e.x-x0,e.y-y0)>rg('p_purge')+e.r)continue;
+          if(e.dead||Math.hypot(e.x-x0,e.y-y0)>RP+e.r)continue;
           if(e.inv){e.invT=0;e.invCd=Math.max(e.invCd,e.inv.every)}
           e.nhT=until;
           dealDamage(e,d,'divine');
         }
-        G.fx.push({k:'ring',x:x0,y:y0,r:rg('p_purge'),t:.4,c:'#ffffff'});G.fx.push({k:'ring',x:x0,y:y0,r:rg('p_purge')*.6,t:.4,c:'#ffe27a'});
+        G.fx.push({k:'ring',x:x0,y:y0,r:RP,t:.4,c:'#ffffff'});G.fx.push({k:'ring',x:x0,y:y0,r:RP*.6,t:.4,c:'#ffe27a'});
         txt(x0,y0-70,'🕊️ ¡Purificación!','#ffe27a',16);
         done('p_purge',Math.max(8,16-.4*l));
       }
@@ -2003,27 +2010,28 @@ function updateHero(dt){
     if(T.wrathOn>0)T.wrathOn-=dt;
     if(T.handsCd>0)T.handsCd-=dt;
     if((l=clv('pl_hands'))&&!(T.handsCd>0)&&G.hp<S.maxHp*.35){
-      G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.35+.015*l));T.handsCd=Math.max(20,60-2*l);
+      const fhn=tf('pl_hands');G.hp=Math.min(S.maxHp,G.hp+S.maxHp*(.35+.015*l)*fhn.hm);T.handsCd=Math.max(20,60-2*l)*fhn.cd;tierCast('pl_hands',fhn,x0,y0);
       G.fx.push({k:'ring',x:x0,y:y0,r:60,t:.4,c:'#7be07b'});txt(x0,y0-70,'🙌 ¡Imposición de manos!','#7be07b',16);
     }
     if((l=clv('pl_aura'))){
       T.auraTk=(T.auraTk??0)-dt;
       if(T.auraTk<=0){
-        T.auraTk=.5;SRC='Aura de devoción';
-        const R=90+3*l,d=hdmg(l)*.45;
+        const fau=tf('pl_aura');T.auraTk=.5*fau.cd;SRC='Aura de devoción';
+        const R=(90+3*l)*fau.rad,d=hdmg(l)*.45;
         for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r&&mult(e,'divine')>0)dealDamage(e,d,'divine')}
       }
     }
     if((l=clv('pl_wrath'))&&rdy('pl_wrath')){
       if(countNear(x0,y0,250)<4)retry('pl_wrath');
-      else{T.wrathOn=6+.2*l;done('pl_wrath',Math.max(20,40-l));G.fx.push({k:'ring',x:x0,y:y0,r:90,t:.4,c:'#ffe27a'});txt(x0,y0-70,'😇 ¡Ira vengadora!','#ffe27a',18)}
+      else{T.wrathOn=(6+.2*l)*tf('pl_wrath').dur;done('pl_wrath',Math.max(20,40-l));G.fx.push({k:'ring',x:x0,y:y0,r:90,t:.4,c:'#ffe27a'});txt(x0,y0-70,'😇 ¡Ira vengadora!','#ffe27a',18)}
     }
     if((l=clv('pl_charge'))&&rdy('pl_charge')&&!G.dash){
       const far=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)>90&&Math.hypot(e.x-x0,e.y-y0)<=rg('pl_charge'));
       if(!far.length)retry('pl_charge');
       else{
-        let best=far[0],bn=-1;for(const e of far){const n=countNear(e.x,e.y,70+2*l);if(n>bn){bn=n;best=e}}
-        const R=70+2*l,d=hdmg(l)*2.5,st=.8+.03*l;
+        const fch2=tf('pl_charge'),R=(70+2*l)*fch2.rad;
+        let best=far[0],bn=-1;for(const e of far){const n=countNear(e.x,e.y,R);if(n>bn){bn=n;best=e}}
+        const d=hdmg(l)*2.5,st=(.8+.03*l)*fch2.dur;
         G.dash={x:best.x,y:best.y,t:.45,fn:()=>{
           SRC='Carga sagrada';const X=cx(),Y=cy();
           for(const e of G.enemies){if(e.dead||Math.hypot(e.x-X,e.y-Y)>R+e.r)continue;dealDamage(e,d,'divine');if(!e.dead)e.stun=Math.max(e.stun||0,st)}
@@ -2034,12 +2042,12 @@ function updateHero(dt){
       }
     }
     if((l=clv('pl_hammer'))&&rdy('pl_hammer')){
-      const n=Math.min(3,1+Math.floor(l/8));
+      const fhm=tf('pl_hammer'),n=Math.min(3+fhm.cnt,1+Math.floor(l/8)+fhm.cnt);
       const cs=G.enemies.filter(e=>!e.dead&&mult(e,'divine')>0&&Math.hypot(e.x-x0,e.y-y0)<=rg('pl_hammer')).sort((a,b)=>b.hp-a.hp).slice(0,n);
       if(!cs.length)retry('pl_hammer');
       else{
         SRC='Martillo de la justicia';const d=hdmg(l)*3.2;
-        for(const e of cs){const ex=e.x,ey=e.y;dealDamage(e,d,'divine');if(!e.dead)e.stun=Math.max(e.stun||0,1.5+.05*l);
+        for(const e of cs){const ex=e.x,ey=e.y;dealDamage(e,d,'divine');if(!e.dead)e.stun=Math.max(e.stun||0,(1.5+.05*l)*fhm.dur);
           G.fx.push({k:'bolt',pts:[[x0,y0-10],[ex,ey]],t:.25,c:'#ffe27a'});G.fx.push({k:'ring',x:ex,y:ey,r:30,t:.3,c:'#ffe27a'});txt(ex,ey-26,'🔨','#ffe27a',16)}
         done('pl_hammer',Math.max(4,9-.25*l));
       }
@@ -2047,11 +2055,11 @@ function updateHero(dt){
   }else if(h==='monk'){
     if(T.bellCd>0)T.bellCd-=dt;
     if((l=clv('k_bell'))&&!(T.bellCd>0)&&G.hp<S.maxHp*.4){
-      G.heroInv=Math.max(G.heroInv||0,1.5+.08*l);T.bellCd=Math.max(15,40-1.1*l);
+      const fbe=tf('k_bell');G.heroInv=Math.max(G.heroInv||0,(1.5+.08*l)*fbe.dur);T.bellCd=Math.max(15,40-1.1*l)*fbe.cd;tierCast('k_bell',fbe,x0,y0);
       G.fx.push({k:'ring',x:x0,y:y0,r:50,t:.4,c:'#ffd24a'});txt(x0,y0-70,'🔔 ¡Campana dorada!','#ffd24a',16);
     }
     if((l=clv('k_wave'))&&rdy('k_wave')){
-      const R=180+5*l;
+      const R=(180+5*l)*tf('k_wave').rad;
       if(countNear(x0,y0,R)<2)retry('k_wave');
       else{
         SRC='Ola de chi';const d=hdmg(l)*2.2;
@@ -2066,7 +2074,7 @@ function updateHero(dt){
       }
     }
     if((l=clv('k_dragon'))&&rdy('k_dragon')){
-      const n=Math.min(4,1+Math.floor(l/5)),d=hdmg(l)*3;let tg=pick(n,'phys',d,rg('k_dragon'));
+      const fdr=tf('k_dragon'),n=Math.min(4+fdr.cnt,1+Math.floor(l/5)+fdr.cnt),d=hdmg(l)*3;let tg=pick(n,'phys',d,rg('k_dragon'));
       if(!tg.length)tg=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=rg('k_dragon')).slice(0,n);
       if(!tg.length)retry('k_dragon');
       else{
@@ -2086,7 +2094,7 @@ function updateHero(dt){
     if((l=clv('k_hundred'))&&rdy('k_hundred')){
       if(countNear(x0,y0,rg('k_hundred'))<3)retry('k_hundred');
       else{
-        const cs=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=rg('k_hundred')).sort(()=>Math.random()-.5).slice(0,6+Math.floor(l/2));
+        const cs=G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=rg('k_hundred')).sort(()=>Math.random()-.5).slice(0,6+Math.floor(l/2)+tf('k_hundred').cnt);
         const d=hdmg(l)*1.6;
         for(let i=0;i<3;i++)G.delayed.push({t:.12*i+.01,fn:()=>{
           SRC='Cien puños';
@@ -2261,7 +2269,7 @@ function update(dt){
   // muerte
   if(G.heroInv>0)G.heroInv-=dt;
   if(G.hp<=0&&G.hero==='priest'&&clv('p_res')&&!(G.ht.resCd>0)){
-    const l=clv('p_res');G.hp=S.maxHp*(.30+.02*l);G.heroInv=2;G.ht.resCd=Math.max(60,150-4*l);
+    const l=clv('p_res'),fre=tf('p_res');G.hp=Math.min(S.maxHp,S.maxHp*(.30+.02*l)*fre.hm);G.heroInv=2*fre.dur;G.ht.resCd=Math.max(60,150-4*l)*fre.cd;tierCast('p_res',fre,cx(),cy());
     G.fx.push({k:'ring',x:cx(),y:cy(),r:120,t:.5,c:'#ffe27a'});txt(cx(),cy()-80,'🔆 ¡Resurrección!','#ffe27a',22);
   }
   if(G.hp<=0)gameOver();
@@ -3083,6 +3091,50 @@ CLS.barbarian.splice(7,0,
 CLS.demon.splice(7,0,
  {id:'z_void',n:'Vacío vil',icon:'🕳️',desc:'Abres un agujero oscuro que atrae a los enemigos hacia su centro y los desgarra.',eff:l=>'Radio '+Math.round(110+2*l)+' · dura '+f1(3+.1*l)+' s · cada '+f1(Math.max(10,18-.4*l))+' s'},
  {id:'z_blades',n:'Tormenta de guadañas',icon:'🌀',desc:'Guadañas viles giran a tu alrededor un rato y trituran a todo el que se acerque.',eff:l=>(3+Math.floor(l/8))+' guadañas · '+f1(4+.12*l)+' s · cada '+f1(Math.max(9,16-.35*l))+' s'});
+/* ===== TANDA 4: sacerdote, paladín, monje ===== */
+/* ---- mejoras: Sacerdote ---- */
+defTiers('p_heal','Plegaria de sanación',[['Plegaria fuerte','+30% de curación.',{hm:1.3}],['Plegaria veloz','-30% de enfriamiento.',{cd:.7}],['Plegaria radiante','Al curar lanza una onda de luz que daña a los enemigos.',{nova:[1.5,200]}],['Plegaria suprema','+40% de curación, -25% de enfriamiento y escudo del 10%.',{hm:1.4,cd:.75,shield:.1}]]);
+defTiers('p_halo','Halo sagrado',[['Halo amplio','+30% de radio.',{rad:1.3}],['Luz abrasadora','+50% de daño.',{dm:1.5}],['Luz lenta','Pulsa un 30% más rápido y ralentiza.',{cd:.7,slow:[.3,1]}],['Halo supremo','+30% de radio, +60% de daño y robo de vida.',{rad:1.3,dm:1.6,heal:.04}]]);
+defTiers('p_judge','Juicio',[['Rayo extra','+1 rayo.',{cnt:1}],['Juicio severo','+50% de daño.',{dm:1.5}],['Juicio paralizante','Los rayos aturden 1 s (60%).',{stun:[.6,1]}],['Tormenta divina','+2 rayos, +40% de daño y -30% de enfriamiento.',{cnt:2,dm:1.4,cd:.7}]]);
+defTiers('p_angel','Ángeles guardianes',[['Ángel extra','+1 ángel.',{cnt:1}],['Ángeles fuertes','+40% de daño y +40% de vida.',{dm:1.4,hpm:1.4}],['Coro celestial','+1 ángel y +30% de vida.',{cnt:1,hpm:1.3}],['Serafines','+1 ángel, +50% de daño y +50% de vida.',{cnt:1,dm:1.5,hpm:1.5}]]);
+defTiers('p_barrier','Barrera divina',[['Barrera gruesa','La barrera es un 50% mayor.',{shm:1.5}],['Recarga rápida','-30% de enfriamiento.',{cd:.7}],['Barrera radiante','-8% de daño recibido y onda de luz al crearla.',{def:.92,nova:[1.5,150]}],['Égida divina','Barrera +50%, -8% de daño recibido y +3 vida/s.',{shm:1.5,def:.92,reg:3}]]);
+defTiers('p_consec','Consagración',[['Suelo amplio','+30% de radio.',{rad:1.3}],['Suelo duradero','+50% de duración.',{dur:1.5}],['Doble consagración','Consagras otro grupo a la vez.',{cnt:1}],['Tierra sagrada','+60% de daño, -30% de enfriamiento y robo de vida.',{dm:1.6,cd:.7,heal:.05}]]);
+defTiers('p_purge','Purificación',[['Onda amplia','+30% de radio.',{rad:1.3}],['Purga larga','+50% de duración.',{dur:1.5}],['Purga ardiente','+60% de daño.',{dm:1.6}],['Juicio final','+30% de radio, +40% de daño, -30% de enfriamiento y aturde 1,5 s.',{rad:1.3,dm:1.4,cd:.7,stun:[1,1.5]}]]);
+defTiers('p_res','Resurrección',[['Vuelta fuerte','Revives con un 30% más de vida.',{hm:1.3}],['Segunda oportunidad','-30% de enfriamiento.',{cd:.7}],['Resurrección radiante','+100% de invulnerabilidad y onda de luz al revivir.',{dur:2,nova:[3,300]}],['Milagro','+30% de vida al revivir, -30% de enfriamiento y escudo del 30%.',{hm:1.3,cd:.7,shield:.3}]]);
+defTiers('p_nova','Nova de luz',[['Nova ardiente','+40% de daño.',{dm:1.4}],['Nova ancha','+30% de radio.',{rad:1.3}],['Nova sanadora','+50% de curación y escudo del 20%.',{hm:1.5,shield:.2}],['Nova doble','+50% de daño, -30% de enfriamiento y una segunda explosión.',{dm:1.5,cd:.7,cnt:1}]]);
+defTiers('p_chains','Cadenas de luz',[['Cadenas largas','+50% de duración.',{dur:1.5}],['Más cadenas','+2 objetivos.',{cnt:2}],['Cadenas ardientes','+50% de daño y los presos reciben +20% de daño.',{dm:1.5,vmx:.2}],['Prisión divina','+2 objetivos, +40% de daño, -30% de enfriamiento y +20% de daño recibido.',{cnt:2,dm:1.4,cd:.7,vmx:.2}]]);
+/* ---- mejoras: Paladín ---- */
+defTiers('pl_holy','Espada consagrada',[['Filo sagrado','+40% de daño divino.',{dm:1.4}],['Luz curativa','El doble de curación por golpe.',{hm:2}],['Filo aturdidor','+40% de daño y aturde 0,6 s (10%).',{dm:1.4,stun:[.1,.6]}],['Espada de luz','+50% de daño, +50% de curación y ejecuta bajo el 25% de vida.',{dm:1.5,hm:1.5,exec:[.25,2]}]]);
+defTiers('pl_cleave',null,[['Barrido amplio','+30% de radio.',{rad:1.3}],['Barrido fuerte','+25% de daño.',{dm:1.25}],['Barrido lento','+30% de radio y ralentiza un 30%.',{rad:1.3,slow:[.3,2]}],['Barrido supremo','+35% de daño y +20% de radio.',{dm:1.35,rad:1.2}]]);
+defTiers('pl_shield',null,[['Escudo firme','-7% de daño recibido.',{def:.93}],['Parada','+5% de bloqueo.',{dodge:.05}],['Muro de fe','-7% de daño recibido y +3 vida/s.',{def:.93,reg:3}],['Baluarte','+5% de bloqueo, -10% de daño recibido y +4 vida/s.',{dodge:.05,def:.9,reg:4}]]);
+defTiers('pl_charge','Carga sagrada',[['Carga amplia','+30% de radio.',{rad:1.3}],['Impacto prolongado','+50% de duración del aturdimiento.',{dur:1.5}],['Carga potente','+50% de daño y -20% de enfriamiento.',{dm:1.5,cd:.8}],['Carga divina','+30% de radio, +50% de daño, -30% de enfriamiento y onda de choque.',{rad:1.3,dm:1.5,cd:.7,nova:[2,200]}]]);
+defTiers('pl_hammer','Martillo de la justicia',[['Martillo extra','+1 martillo.',{cnt:1}],['Martillo pesado','+50% de daño.',{dm:1.5}],['Martillo del juicio','+50% de aturdimiento y rebota a 2 enemigos.',{dur:1.5,chain:2}],['Lluvia de martillos','+2 martillos, +40% de daño y -30% de enfriamiento.',{cnt:2,dm:1.4,cd:.7}]]);
+defTiers('pl_aura','Aura de devoción',[['Aura amplia','+30% de radio.',{rad:1.3}],['Aura ardiente','+50% de daño y +3 vida/s.',{dm:1.5,reg:3}],['Aura lenta','Pulsa un 30% más rápido y ralentiza.',{cd:.7,slow:[.3,1]}],['Aura suprema','+30% de radio, +60% de daño y +5 vida/s.',{rad:1.3,dm:1.6,reg:5}]]);
+defTiers('pl_hands','Imposición de manos',[['Manos fuertes','+30% de curación.',{hm:1.3}],['Manos veloces','-30% de enfriamiento.',{cd:.7}],['Manos protectoras','Además te da un escudo del 20%.',{shield:.2}],['Manos divinas','+30% de curación, -30% de enfriamiento y onda de luz.',{hm:1.3,cd:.7,nova:[2,250]}]]);
+defTiers('pl_wrath',null,[['Ira duradera','+30% de duración.',{dur:1.3}],['Ira feroz','+20% de daño.',{dm:1.2}],['Ira veloz','-25% de enfriamiento y +15% de velocidad.',{cd:.75,atk:1.15}],['Ira divina','+30% de duración, +30% de daño y escudo del 15%.',{dur:1.3,dm:1.3,shield:.15}]]);
+defTiers('pl_beam','Lanza de luz',[['Lanza afilada','+40% de daño.',{dm:1.4}],['Lanza doble','Una lanza más contra otro objetivo.',{cnt:1}],['Lanza paralizante','Aturde 1 s (60%) y -20% de enfriamiento.',{stun:[.6,1],cd:.8}],['Lanza del cielo','+1 lanza, +40% de daño, -30% de enfriamiento y robo de vida.',{cnt:1,dm:1.4,cd:.7,heal:.05}]]);
+defTiers('pl_bastion','Bastión divino',[['Bastión duradero','+30% de duración.',{dur:1.3}],['Luz castigadora','+50% de daño de los pulsos.',{dm:1.5}],['Bastión curativo','-25% de enfriamiento y el doble de curación.',{cd:.75,hm:2}],['Fortaleza de luz','+30% de duración, +50% de daño, +30% de radio y escudo del 20%.',{dur:1.3,dm:1.5,rad:1.3,shield:.2}]]);
+/* ---- mejoras: Monje ---- */
+defTiers('k_combo','Combo de palma',[['Palma amplia','+30% de radio de la palma.',{rad:1.3}],['Palma potente','+40% de daño.',{dm:1.4}],['Combo veloz','La palma sale un golpe antes.',{cnt:1}],['Palma suprema','+40% de daño, +30% de radio y aturde 1,2 s.',{dm:1.4,rad:1.3,stun:[1,1.2]}]]);
+defTiers('k_flurry',null,[['Puños ágiles','+12% de velocidad.',{atk:1.12}],['Puño extra','+1 objetivo.',{cnt:1}],['Puños de acero','+15% de velocidad.',{atk:1.15}],['Lluvia de puños','+1 objetivo y +20% de velocidad.',{cnt:1,atk:1.2}]]);
+defTiers('k_wind',null,[['Pies ligeros','+5% de esquiva.',{dodge:.05}],['Paso fantasma','+5% de esquiva y +2 vida/s.',{dodge:.05,reg:2}],['Piel de viento','+5% de esquiva y -8% de daño recibido.',{dodge:.05,def:.92}],['Viento eterno','+8% de esquiva, -8% de daño y +3 vida/s.',{dodge:.08,def:.92,reg:3}]]);
+defTiers('k_wave','Ola de chi',[['Ola amplia','+30% de radio.',{rad:1.3}],['Ola potente','+50% de daño.',{dm:1.5}],['Ola paralizante','Aturde 1 s (60%).',{stun:[.6,1]}],['Maremoto de chi','+30% de radio, +40% de daño y -30% de enfriamiento.',{rad:1.3,dm:1.4,cd:.7}]]);
+defTiers('k_dragon','Palma del dragón',[['Palma extra','+1 palma.',{cnt:1}],['Palma ardiente','+50% de daño.',{dm:1.5}],['Aliento de dragón','+1 palma y queman.',{cnt:1,burn:.5}],['Dragón ancestral','+2 palmas, +40% de daño y -30% de enfriamiento.',{cnt:2,dm:1.4,cd:.7}]]);
+defTiers('k_bell','Campana dorada',[['Campana larga','+30% de invulnerabilidad.',{dur:1.3}],['Campana rápida','-30% de enfriamiento.',{cd:.7}],['Campana curativa','Al sonar te curas un 20%.',{cheal:.2}],['Campana eterna','+30% de duración, -30% de enfriamiento y onda de choque.',{dur:1.3,cd:.7,nova:[2,250]}]]);
+defTiers('k_serene',null,[['Calma','+3 vida/s.',{reg:3}],['Mente clara','-7% de daño recibido.',{def:.93}],['Armonía','+4 vida/s y -7% de daño recibido.',{reg:4,def:.93}],['Iluminación','+6 vida/s y -10% de daño recibido.',{reg:6,def:.9}]]);
+defTiers('k_hundred','Cien puños',[['Más puños','+4 enemigos golpeados.',{cnt:4}],['Puños de hierro','+50% de daño.',{dm:1.5}],['Ritmo veloz','-30% de enfriamiento.',{cd:.7}],['Mil puños','+6 enemigos, +40% de daño, -20% de enfriamiento y aturde 0,8 s.',{cnt:6,dm:1.4,cd:.8,stun:[.5,.8]}]]);
+defTiers('k_kick','Patada del huracán',[['Patada amplia','+30% de radio.',{rad:1.3}],['Patada doble','+2 patadas.',{cnt:2}],['Patada brutal','+50% de daño.',{dm:1.5}],['Huracán supremo','+2 patadas, +40% de daño, -30% de enfriamiento y aturde 1 s.',{cnt:2,dm:1.4,cd:.7,stun:[1,1]}]]);
+defTiers('k_nirvana','Nirvana',[['Trance largo','+30% de duración.',{dur:1.3}],['Pulso de chi','+30% de daño del nirvana y de los pulsos.',{dm:1.3}],['Calma profunda','-25% de enfriamiento y +50% de curación.',{cd:.75,hm:1.5}],['Iluminación total','+30% de duración, +40% de daño y escudo del 20%.',{dur:1.3,dm:1.4,shield:.2}]]);
+Object.assign(RNG,{p_nova:300,p_chains:380,pl_beam:460,k_kick:200});
+CLS.priest.splice(7,0,
+ {id:'p_nova',n:'★ Nova de luz (ULTIMATE)',icon:'🌞',desc:'Una explosión de luz sagrada hiere a todos los enemigos a tu alcance y cura a tus aliados y a ti.',eff:l=>'Daño x4 · cura '+f1(20+.5*l)+'% · cada '+f1(Math.max(30,55-1.2*l))+' s'},
+ {id:'p_chains',n:'Cadenas de luz',icon:'⛓️',desc:'Cadenas de luz atrapan a los enemigos más fuertes: inmóviles, heridos y más vulnerables.',eff:l=>(2+Math.floor(l/6))+' objetivos · inmoviliza '+f1(3+.1*l)+' s · cada '+f1(Math.max(8,15-.35*l))+' s'});
+CLS.paladin.splice(7,0,
+ {id:'pl_beam',n:'Lanza de luz',icon:'🔱',desc:'Una lanza de luz divina atraviesa al enemigo más fuerte y a todos los de su línea.',eff:l=>'Daño x4 en línea · cada '+f1(Math.max(6,12-.3*l))+' s'},
+ {id:'pl_bastion',n:'★ Bastión divino (ULTIMATE)',icon:'🏰',desc:'Un bastión de luz te protege: recibes un 65% menos de daño, te curas y pulsos sagrados hieren a los enemigos cercanos.',eff:l=>f1(6+.25*l)+' s · -65% daño recibido · pulso cada 0,6 s · cada '+f1(Math.max(40,70-1.5*l))+' s'});
+CLS.monk.splice(7,0,
+ {id:'k_kick',n:'Patada del huracán',icon:'🦶',desc:'Giras con una serie de patadas que hieren, empujan y aturden a todos los que te rodean.',eff:l=>'3 patadas · radio '+Math.round(120+2*l)+' · cada '+f1(Math.max(7,13-.3*l))+' s'},
+ {id:'k_nirvana',n:'★ Nirvana (ULTIMATE)',icon:'🧘',desc:'Alcanzas el nirvana: atacas un 50% más rápido, pegas un 30% más fuerte, recibes la mitad de daño, te curas y emites pulsos de chi.',eff:l=>f1(8+.3*l)+' s · +50% velocidad · -50% daño recibido · cada '+f1(Math.max(40,70-1.5*l))+' s'});
 /* ---- lógica de habilidades (reemplaza la de la tanda anterior) ---- */
 function heroKill3(e){
   const h=G.hero,T=G.ht;
@@ -3098,12 +3150,12 @@ function heroTick3(h,dt,T,x0,y0,rdy,done,retry){
   if(G.tdv!==(G.tv||0))tierRecalc();
   if(G.trg)G.hp=Math.min(S.maxHp,G.hp+G.trg*dt);
   if(G.furyT>0){G.furyT-=dt;if(G.furyT<=0)G.fury=0}
-  if(!['troll','werewolf','druid','mage','archer','necro','dwarf','barbarian','demon'].includes(h))return;
+  if(!['troll','werewolf','druid','mage','archer','necro','dwarf','barbarian','demon','priest','paladin','monk'].includes(h))return;
   let l,f;const ring=(x,y,r,c,t)=>G.fx.push({k:'ring',x,y,r,t:t||.4,c});
   const bolt=(e,c)=>G.fx.push({k:'bolt',pts:[[e.x,e.y-130],[e.x,e.y]],t:.22,c});
   const inR=(R)=>G.enemies.filter(e=>!e.dead&&Math.hypot(e.x-x0,e.y-y0)<=R);
   const bestCluster=(R,rad,skip)=>{let b=null,bn=0;for(const e of inR(R)){if(skip&&skip.some(s=>Math.hypot(s.x-e.x,s.y-e.y)<rad))continue;const n=countNear(e.x,e.y,rad);if(n>bn){bn=n;b=e}}return b};
-  for(const k of['loaOn','wolfOn','bearOn','starOn','bersOn','bladeOn'])if(T[k]>0)T[k]-=dt;
+  for(const k of['loaOn','wolfOn','bearOn','starOn','bersOn','bladeOn','nirvOn','bastOn'])if(T[k]>0)T[k]-=dt;
   if(h==='troll'){
     if((l=clv('t_regen'))){f=tf('t_regen');if(G.hp<S.maxHp*(f.thr||.5))G.hp=Math.min(S.maxHp,G.hp+.5*l*dt)}
     if((l=clv('t_raptor'))){f=tf('t_raptor');
@@ -3386,6 +3438,72 @@ function heroTick3(h,dt,T,x0,y0,rdy,done,retry){
         for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r)dealDamage(e,d,'magic')}}
     }
   }
+  /* ---- tanda 4: habilidades nuevas del sacerdote, el paladín y el monje ---- */
+  if(h==='priest'){
+    if((l=clv('p_nova'))&&rdy('p_nova')){
+      f=tf('p_nova');const RN=rg('p_nova')*f.rad;
+      if(countNear(x0,y0,RN)<5)retry('p_nova');
+      else{const pulse=k=>{SRC='Nova de luz';const d=hdmg(l)*4*(k?.7:1);
+          for(const e of G.enemies){if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);if(dd>RN+e.r)continue;if(mult(e,'divine')>0)dealDamage(e,d,'divine');if(!e.dead&&dd>1){e.x+=dx/dd*25;e.y+=dy/dd*25}}
+          ring(x0,y0,RN,'#ffe27a',.5);ring(x0,y0,RN*.65,'#ffffff',.45);ring(x0,y0,RN*.3,'#fff6c0',.4)};
+        pulse(0);for(let k=1;k<=f.cnt;k++)G.delayed.push({t:.6*k,fn:()=>pulse(k)});
+        const hk=(.2+.005*l)*f.hm;G.hp=Math.min(S.maxHp,G.hp+S.maxHp*hk);for(const a of G.allies)a.hp=Math.min(a.max,a.hp+a.max*hk);
+        txt(x0,y0-80,'🌞 ¡NOVA DE LUZ!','#ffe27a',22);done('p_nova',Math.max(30,55-1.2*l))}
+    }
+    if((l=clv('p_chains'))&&rdy('p_chains')){
+      f=tf('p_chains');const cs=inR(rg('p_chains')).sort((a,b)=>b.hp-a.hp).slice(0,2+Math.floor(l/6)+f.cnt);
+      if(!cs.length)retry('p_chains');
+      else{SRC='Cadenas de luz';const du=(3+.1*l)*f.dur,d=hdmg(l)*1.5;
+        for(const e of cs){dealDamage(e,d,'divine');if(!e.dead){e.root=Math.max(e.root||0,du);e.vt=G.t+du;e.vm=1.2+f.vmx}
+          G.fx.push({k:'beam',x:e.x,y:e.y,t:.3,c:'#ffe27a'});ring(e.x,e.y,e.r+14,'#ffe27a',.45);txt(e.x,e.y-e.r-14,'⛓️','#ffe27a',20)}
+        done('p_chains',Math.max(8,15-.35*l))}
+    }
+  }
+  if(h==='paladin'){
+    if((l=clv('pl_beam'))&&rdy('pl_beam')){
+      f=tf('pl_beam');const cs=inR(rg('pl_beam')).filter(e=>mult(e,'divine')>0).sort((a,b)=>b.hp-a.hp).slice(0,1+f.cnt);
+      if(!cs.length)retry('pl_beam');
+      else{SRC='Lanza de luz';const d=hdmg(l)*4,L=rg('pl_beam')+40;
+        for(const t of cs){const a=Math.atan2(t.y-y0,t.x-x0);
+          lineHit(a,L,16,e=>{if(mult(e,'divine')>0)dealDamage(e,e===t?d:d*.6,'divine');ring(e.x,e.y,e.r+8,'#ffe27a',.25)});
+          G.fx.push({k:'bolt',pts:[[x0,y0-10],[x0+Math.cos(a)*L,y0-10+Math.sin(a)*L]],t:.35,c:'#ffe27a'});
+          G.fx.push({k:'bolt',pts:[[x0,y0-10],[x0+Math.cos(a)*L,y0-10+Math.sin(a)*L]],t:.25,c:'#ffffff'})}
+        txt(x0,y0-70,'🔱 ¡Lanza de luz!','#ffe27a',16);done('pl_beam',Math.max(6,12-.3*l))}
+    }
+    if((l=clv('pl_bastion'))&&rdy('pl_bastion')){
+      f=tf('pl_bastion');
+      if(countNear(x0,y0,260)<3)retry('pl_bastion');
+      else{T.bastOn=(6+.25*l)*f.dur;T.bastTk=0;ring(x0,y0,120,'#ffe27a',.6);ring(x0,y0,70,'#ffffff',.5);txt(x0,y0-90,'🏰 ¡BASTIÓN DIVINO!','#ffe27a',22);done('pl_bastion',Math.max(40,70-1.5*l))}
+    }
+    if(T.bastOn>0&&(l=clv('pl_bastion'))){
+      f=tf('pl_bastion');T.bastTk-=dt;
+      if(T.bastTk<=0){T.bastTk=.6;SRC='Bastión divino';const R=170*f.rad,d=hdmg(l)*1.3;
+        for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r&&mult(e,'divine')>0)dealDamage(e,d,'divine')}
+        G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.015*f.hm);ring(x0,y0,R,'#ffe27a',.4)}
+    }
+  }
+  if(h==='monk'){
+    if((l=clv('k_kick'))&&rdy('k_kick')){
+      f=tf('k_kick');const R=(120+2*l)*f.rad;
+      if(countNear(x0,y0,R)<2)retry('k_kick');
+      else{const n=3+f.cnt,d=hdmg(l)*1.2;
+        for(let k=0;k<n;k++)G.delayed.push({t:.15*k+.01,fn:()=>{SRC='Patada del huracán';
+          for(const e of G.enemies){if(e.dead)continue;const dx=e.x-x0,dy=e.y-y0,dd=Math.hypot(dx,dy);if(dd>R+e.r)continue;dealDamage(e,d,'phys');if(!e.dead){if(dd>1){e.x+=dx/dd*22;e.y+=dy/dd*22}if(k===n-1)e.stun=Math.max(e.stun||0,.8)}}
+          ring(x0,y0,R*(.6+.4*(k+1)/n),'#ffcf7a',.3)}});
+        txt(x0,y0-70,'🦶 ¡HURACÁN!','#ffcf7a',18);done('k_kick',Math.max(7,13-.3*l))}
+    }
+    if((l=clv('k_nirvana'))&&rdy('k_nirvana')){
+      f=tf('k_nirvana');
+      if(countNear(x0,y0,260)<3)retry('k_nirvana');
+      else{T.nirvOn=(8+.3*l)*f.dur;T.nirvTk=0;ring(x0,y0,120,'#bfe6ff',.6);ring(x0,y0,70,'#ffffff',.5);txt(x0,y0-90,'🧘 ¡NIRVANA!','#bfe6ff',22);done('k_nirvana',Math.max(40,70-1.5*l))}
+    }
+    if(T.nirvOn>0&&(l=clv('k_nirvana'))){
+      f=tf('k_nirvana');G.hp=Math.min(S.maxHp,G.hp+S.maxHp*.03*dt*f.hm);T.nirvTk-=dt;
+      if(T.nirvTk<=0){T.nirvTk=.8;SRC='Nirvana';const R=170,d=hdmg(l)*1.4;
+        for(const e of G.enemies){if(e.dead)continue;if(Math.hypot(e.x-x0,e.y-y0)<=R+e.r)dealDamage(e,d,'magic')}
+        ring(x0,y0,R,'#bfe6ff',.5);ring(x0,y0,R*.55,'#ffffff',.4)}
+    }
+  }
 }
 /* ---- dibujo de tótems, marcas, ciclones, enjambres y furia ---- */
 function drawFx4(x0,y0){
@@ -3515,9 +3633,11 @@ function drawClassFx(x0,y0){
       ctx.beginPath();ctx.moveTo(6,-8);ctx.quadraticCurveTo(30,-44,52,-30);ctx.quadraticCurveTo(38,-22,44,-12);ctx.quadraticCurveTo(28,-10,34,0);ctx.quadraticCurveTo(18,-2,6,4);ctx.closePath();ctx.fill();ctx.restore()}
     ctx.restore();
   }
-  if(h==='paladin'&&clv('pl_aura')){const R=90+3*clv('pl_aura');ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='#ffe27a10';ctx.fill();ctx.strokeStyle='#ffe27a44';ctx.setLineDash([4,6]);ctx.lineDashOffset=-G.t*20;ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0}
+  if(h==='paladin'&&G.ht&&G.ht.bastOn>0){ctx.beginPath();ctx.arc(x0,y0,60+3*Math.sin(G.t*6),0,6.3);ctx.fillStyle='rgba(255,226,122,.2)';ctx.fill();ctx.strokeStyle='rgba(255,240,170,.85)';ctx.lineWidth=3;ctx.stroke();ctx.lineWidth=1}
+  if(h==='monk'&&G.ht&&G.ht.nirvOn>0){ctx.beginPath();ctx.arc(x0,y0,50+4*Math.sin(G.t*5),0,6.3);ctx.fillStyle='rgba(191,230,255,.22)';ctx.fill();ctx.strokeStyle='rgba(220,240,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.lineWidth=1}
+  if(h==='paladin'&&clv('pl_aura')){const R=(90+3*clv('pl_aura'))*tf('pl_aura').rad;ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='#ffe27a10';ctx.fill();ctx.strokeStyle='#ffe27a44';ctx.setLineDash([4,6]);ctx.lineDashOffset=-G.t*20;ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0}
   if(h==='priest'&&clv('p_halo')){
-    const R=110+4*clv('p_halo');
+    const R=(110+4*clv('p_halo'))*tf('p_halo').rad;
     ctx.beginPath();ctx.arc(x0,y0,R,0,6.3);ctx.fillStyle='rgba(255,226,122,'+(.07+.03*Math.sin(G.t*4))+')';ctx.fill();ctx.strokeStyle='rgba(255,226,122,.55)';ctx.lineWidth=1.5;ctx.stroke();ctx.lineWidth=1;
   }
   if(h==='demon'&&clv('z_immo')){
