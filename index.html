@@ -4585,32 +4585,35 @@ function drawClassFx(x0,y0){
 }
 
 /* ============ DIBUJO ============ */
-const FOREST_TEXTURE={image:null,ready:false};
+const FOREST_TEXTURE={image:null,ready:false,portraitImage:null,portraitReady:false,portraitRequested:false};
 if(typeof Image!=='undefined'){
   const img=new Image();FOREST_TEXTURE.image=img;
   img.onload=()=>{FOREST_TEXTURE.ready=true;BG=null};
   img.onerror=()=>{FOREST_TEXTURE.ready=false;BG=null};
-  img.src='assets/bosque-verde.png';
+  img.src='assets/campo-batalla-arcano.png';
 }
 function paintBattlefield(g,W,H,x0,y0){
   const base=g.createRadialGradient(x0,y0,30,x0,y0,Math.max(W,H)*.6);
-  base.addColorStop(0,'#719a45');base.addColorStop(1,'#315a36');
+  base.addColorStop(0,'#a89e89');base.addColorStop(1,'#7d8460');
   g.fillStyle=base;g.fillRect(0,0,W,H);
   if(FOREST_TEXTURE.ready){
     // El claro central ocupa la pantalla; las copias reflejadas cubren el zoom mínimo.
-    const tw=W/2,th=H/2;
+    const tw=W/2,th=H/2,image=H>W&&FOREST_TEXTURE.portraitReady?FOREST_TEXTURE.portraitImage:FOREST_TEXTURE.image;
+    const iw=image.naturalWidth||tw,ih=image.naturalHeight||th,sw=Math.min(iw,ih*tw/th),sh=sw*th/tw;
     for(let row=-1;row<=1;row++)for(let col=-1;col<=1;col++){
       const flipX=Math.abs(col)%2,flipY=Math.abs(row)%2;
       g.save();g.translate(W/4+col*tw+(flipX?tw:0),H/4+row*th+(flipY?th:0));
-      g.scale(flipX?-1:1,flipY?-1:1);g.drawImage(FOREST_TEXTURE.image,0,0,tw,th);g.restore();
+      g.scale(flipX?-1:1,flipY?-1:1);g.drawImage(image,(iw-sw)/2,(ih-sh)/2,sw,sh,0,0,tw,th);g.restore();
     }
     return;
   }
-  // Pradera de respaldo durante la carga de la ilustración o sin el archivo de imagen.
+  // Terreno de respaldo: piedra gastada y vegetación en las esquinas durante la carga.
   let seed=32167;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
   for(let i=0;i<W*H/1600;i++){
     const x=rnd()*W,y=rnd()*H,r=3+rnd()*10;
-    g.fillStyle=i%2?'#93b65744':'#214d3444';g.beginPath();g.ellipse(x,y,r*2,r,0,0,6.3);g.fill();
+    const edge=Math.abs(x-W/2)/(W/2)*Math.abs(y-H/2)/(H/2);
+    if(edge<.25){g.fillStyle=i%2?'#c5bdab66':'#716c6155';g.fillRect(x,y,r*2,r);g.strokeStyle='#5f5a4f55';g.lineWidth=.7;g.strokeRect(x,y,r*2,r);continue}
+    g.fillStyle=i%2?'#93b65788':'#214d3477';g.beginPath();g.ellipse(x,y,r*2,r,0,0,6.3);g.fill();
     g.strokeStyle=i%2?'#b5cc6877':'#426f3c';g.lineWidth=1;
     g.beginPath();g.moveTo(x-3,y);g.lineTo(x-5,y-7);g.moveTo(x,y);g.lineTo(x+1,y-9);g.moveTo(x+3,y);g.lineTo(x+6,y-5);g.stroke();
     if(i%13===0){g.fillStyle=i%26?'#e9e9c9':'#a7c6ed';for(let k=0;k<4;k++){g.beginPath();g.arc(x+Math.cos(k*1.57)*3,y-6+Math.sin(k*1.57)*3,2,0,6.3);g.fill()}}
@@ -4619,6 +4622,12 @@ function paintBattlefield(g,W,H,x0,y0){
 let BG=null;
 /* el fondo cubre el mundo visible con el zoom mínimo (0,5) y se dibuja dentro de la transformación del zoom */
 function drawBG(x0,y0){
+  if(H>W&&!FOREST_TEXTURE.portraitRequested&&typeof Image!=='undefined'){
+    FOREST_TEXTURE.portraitRequested=true;
+    const portrait=new Image();FOREST_TEXTURE.portraitImage=portrait;
+    portrait.onload=()=>{FOREST_TEXTURE.portraitReady=true;BG=null};
+    portrait.src='assets/campo-batalla-arcano-movil.png';
+  }
   const BW=Math.ceil(W*2),BH=Math.ceil(H*2);
   if(!BG||BG.w!==W||BG.h!==H||BG.d!==dpr){
     const rs=Math.max(.5,Math.min(dpr*1.25,Math.sqrt(10e6/(BW*BH))));
@@ -5109,7 +5118,7 @@ function drawDying(ctx){
 function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   const x0=hx(),y0=hy(),px=cx(),py=cy();
-  ctx.fillStyle='#426b37';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#8d8c70';ctx.fillRect(0,0,W,H);
   ctx.save();ctx.translate(x0,y0);ctx.scale(Z,Z);ctx.translate(-x0,-y0);
   drawBG(x0,y0);
   // alcance

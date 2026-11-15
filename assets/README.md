@@ -1,6 +1,10 @@
-# Ilustración del bosque
+# Escenarios de Mago Infinito
 
-Archivo: `bosque-verde.png` (1254 × 1254 px). Creado con la herramienta integrada `image_gen`; se usa como fondo del mapa. Las imágenes del juego se guardan dentro de este repositorio. No requiere servicios externos al jugar.
+El escenario activo es [Campo de batalla arcano](campo-batalla-arcano.md), guardado en `campo-batalla-arcano.png`. Su documento incluye el prompt final y la herramienta utilizada.
+
+## Ilustración anterior del bosque
+
+Archivo: `bosque-verde.png` (1254 × 1254 px). Creado con la herramienta integrada `image_gen`; se conserva como versión anterior del fondo del mapa. Las imágenes del juego se guardan dentro de este repositorio. No requiere servicios externos al jugar.
 
 Prompt final:
 

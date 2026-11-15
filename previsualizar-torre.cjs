@@ -23,7 +23,7 @@ check(document.documentElement.scrollWidth<=innerWidth,'Desbordamiento horizonta
 check(eggX()===towX()+58&&eggY()===towY()+34,'El huevo no está junto a la torre');
 const panel=document.querySelector('#bottomp');check(panel.scrollWidth<=panel.clientWidth+1,'Desbordamiento del panel');
 document.body.dataset.preview='ok';
-function repaint(){draw();if(FOREST_TEXTURE.ready)document.body.dataset.forest='loaded';requestAnimationFrame(repaint)}requestAnimationFrame(repaint);
+function repaint(){draw();if(FOREST_TEXTURE.ready&&(H<=W||FOREST_TEXTURE.portraitReady))document.body.dataset.forest='loaded';requestAnimationFrame(repaint)}requestAnimationFrame(repaint);
 `;
 fs.writeFileSync('preview-torre.html',source.slice(0,start)+preview+source.slice(end));
 console.log('Generada preview-torre.html: tres torres Nv100, diez poderes Nv20 y comprobaciones de interfaz.');
