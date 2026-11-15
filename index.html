@@ -878,8 +878,9 @@ function updateOrbit(dt){
       const rr=o.r+e.r;
       if((e.x-bx)**2+(e.y-by)**2>rr*rr)continue;
       if(!e.ob)e.ob=[];
-      if((e.ob[i]||0)>G.t)continue;
-      e.ob[i]=G.t+.4;
+      const ok=i+(G.orbOff||0);
+      if((e.ob[ok]||0)>G.t)continue;
+      e.ob[ok]=G.t+.4;
       dealDamage(e,dmg,'fire');
       if(!e.dead)addDot(e,'fire',dmg*.3,2,false);
     }
@@ -917,12 +918,12 @@ function updateTentacles(dt){
   G.healT=(G.healT||0)-dt;
   if(G.healT<=0){G.healT=1;if((G.healAcc||0)>=1)txt(ax()+(Math.random()-.5)*30,ay()-36,'+'+Math.round(G.healAcc),'#b27cff',13);G.healAcc=0}
 }
-function drawOrbitTent(x0,y0){
+function drawOrbitTent(x0,y0,orbA=G.orbA){
   const lo=G.skills.orbit;
   if(lo){
     const o=orbitInfo(lo);
     for(let i=0;i<o.n;i++){
-      const a=G.orbA+i*6.283/o.n,bx=x0+Math.cos(a)*o.rad,by=y0+Math.sin(a)*o.rad;
+      const a=orbA+i*6.283/o.n,bx=x0+Math.cos(a)*o.rad,by=y0+Math.sin(a)*o.rad;
       for(let k=1;k<=(LOWQ?2:4);k++){const b=a-k*.12*Math.sign(o.sp||1);glow(x0+Math.cos(b)*o.rad,y0+Math.sin(b)*o.rad,o.r*(1-.18*k),k<3?'#ff9a3d':'#ff4a1a',.35-.07*k)}
       ctx.beginPath();ctx.arc(bx,by,o.r,0,6.3);ctx.fillStyle='#ff7a3d';ctx.fill();ctx.beginPath();ctx.arc(bx,by,o.r*1.5,0,6.3);ctx.fillStyle='#ff5a1a33';ctx.fill();ctx.beginPath();ctx.arc(bx,by,o.r,0,6.3);
       ctx.beginPath();ctx.arc(bx,by,o.r*.5,0,6.3);ctx.fillStyle='#ffd24a';ctx.fill();
@@ -1460,17 +1461,17 @@ function updateZones(dt){
   G.delayed=G.delayed.filter(d=>d.t>0);
   if(G.haste>0)G.haste-=dt;
 }
-function useSpecial(id){
+function useSpecial(id,index=0){
   const sp=SPS.find(s=>s.id===id);
   if(!sp||tLvl()<sp.unlock||G.spCd[id]>0||G.over||G.modal||G.paused)return;
-  SRC=sp.n;towerBegin();castSpecial(id);towerEnd();G.spCd[id]=powerCooldown(id);
+  SRC=sp.n;towerBegin(index);castSpecial(id);towerEnd();G.spCd[id]=powerCooldown(id);
 }
 const powerCooldown=id=>SPS.find(sp=>sp.id===id).cd*spCdF(G.spLv[id])*tf(id).cd/(1+(S.atk-1)*.5);
-function updateSpecials(dt){
+function updateSpecials(dt,index=0){
   for(const sp of SPS){
     if(tLvl()<sp.unlock)continue;
     G.spCd[sp.id]=Math.max(0,G.spCd[sp.id]-dt);
-    if(G.spCd[sp.id]<=0&&autoOk(sp.id))useSpecial(sp.id);
+    if(G.spCd[sp.id]<=0&&autoOk(sp.id))useSpecial(sp.id,index);
   }
 }
 const ALLYK={skel:{e:'💀',spd:170,rate:.55},golem:{e:'🗿',spd:110,rate:.9},mummy:{e:'🧟',spd:95,rate:.9},vamp:{e:'🦇',spd:240,rate:.4,fly:true},angel:{e:'👼',spd:230,rate:.5,fly:true,type:'divine'}};
@@ -2227,22 +2228,14 @@ function update(dt){
   // torre del mago: ataque básico, habilidades comunes y poderes salen de la torre
   towerBegin();
   towerBasic(dt);
-  for(const s of SK){
-    const l=G.skills[s.id];if(!l||s.kind==='passive')continue;
-    G.cd[s.id]-=dt;
-    if(G.cd[s.id]<=0){
-      SRC=s.n;
-      if(castSkill(s,l))G.cd[s.id]=s.cd*tf(s.id).cd/(S.atk*(G.haste>0?1.5:1));else G.cd[s.id]=0;
-    }
-  }
-  updateUlts(dt);
-  updateOrbit(dt);
-  updateTentacles(dt);
   towerEnd();
+  /* Bolas de fuego orbitales: giran alrededor del héroe (sin origen de torre) */
+  G.orbOff=0;updateOrbit(dt);
+  /* Resto de habilidades, ultimates y poderes: las lanza CADA torre con sus propios enfriamientos */
+  {const sts=syncTowers();for(let i=0;i<sts.length;i++)towerAbilities(i,sts[i],dt)}
   updateDragon(dt);
   updateSkelDragons(dt);
   updateHero(dt);
-  towerBegin();updateSpecials(dt);towerEnd();
   updateZones(dt);
   // enemigos
   const mx=cx(),my=cy();let tn=null;G._tl=G.dragon?[G.dragon,...G.sdrags]:G.sdrags;
@@ -5175,7 +5168,7 @@ function draw(){
   ctx.beginPath();ctx.arc(px,py,34*pulse,0,6.3);ctx.fillStyle='#8f7cff22';ctx.fill();
   drawOctopus(towX()+20,towY()-20);
   drawClassFx(px,py);drawFx3(px,py);
-  drawOrbitTent(towX(),towY());
+  drawOrbitTent(px,py);
   if(G.shield>0){ctx.beginPath();ctx.arc(px,py,38,0,6.3);ctx.strokeStyle='#7fd6ffcc';ctx.lineWidth=3;ctx.stroke();ctx.lineWidth=1;ctx.fillStyle='#7fd6ff22';ctx.fill()}
   drawDragon(px,py);
   drawAllies();
@@ -5695,7 +5688,7 @@ function buildBar(){
   const sb=document.createElement('button');sb.className='ctl';sb.onclick=cycleSpeed;box.appendChild(sb);barEls.speed=sb;
   const pb=document.createElement('button');pb.className='ctl';pb.onclick=togglePause;box.appendChild(pb);barEls.pause=pb;
 }
-function cycleSpeed(){G.speed=G.speed>=3?1:G.speed+1}
+function cycleSpeed(){G.speed=G.speed>=5?1:G.speed+1}
 function togglePause(){if(!G.modal)G.paused=!G.paused}
 function refreshBar(){
   barEls.speed.textContent='⏩ x'+G.speed;
@@ -6683,7 +6676,33 @@ const TSRC=new Set(['Rayo arcano de la torre']);       /* fuentes de daño que c
 for(const s of SK){TSRC.add(s.n);TSRC.add('★ '+s.n)}
 const TSRC_POW=()=>{for(const sp of SPS)TSRC.add(sp.n)};
 
-function towerBegin(){G.orgN=(G.orgN||0)+1;G.org={x:towX(),y:towY()}}
+function towerBegin(index=0){G.orgN=(G.orgN||0)+1;G.org={x:towX(index),y:towY(index)}}
+/* Habilidades de una torre. La torre 0 usa el estado global; las demás tienen el suyo (enfriamientos, orbitales, pulpo, poderes). */
+function towerAbilities(index,unit,dt){
+  let sw=null;
+  if(index){
+    let sv=unit.sv;
+    if(!sv){sv=unit.sv={cd:{},ultCd:{},spCd:{},tent:[],orbA:index};for(const s of SK){sv.cd[s.id]=0;sv.ultCd[s.id]=0}for(const sp of SPS)sv.spCd[sp.id]=0}
+    sw=[G.cd,G.ultCd,G.spCd,G.tent,G.orbA];
+    G.cd=sv.cd;G.ultCd=sv.ultCd;G.spCd=sv.spCd;G.tent=sv.tent;G.orbA=sv.orbA;
+  }
+  G.orbOff=index*10;
+  towerBegin(index);
+  for(const s of SK){
+    const l=G.skills[s.id];if(!l||s.kind==='passive')continue;
+    G.cd[s.id]-=dt;
+    if(G.cd[s.id]<=0){
+      SRC=s.n;
+      if(castSkill(s,l))G.cd[s.id]=s.cd*tf(s.id).cd/(S.atk*(G.haste>0?1.5:1));else G.cd[s.id]=0;
+    }
+  }
+  updateUlts(dt);
+  updateTentacles(dt);
+  updateSpecials(dt,index);
+  towerEnd();
+  G.orbOff=0;
+  if(index){unit.sv.tent=G.tent;unit.sv.orbA=G.orbA;[G.cd,G.ultCd,G.spCd,G.tent,G.orbA]=sw}
+}
 function towerEnd(){G.orgN=Math.max(0,(G.orgN||0)-1);if(G.orgN===0)G.org=null}
 
 /* ---- experiencia y niveles ---- */
