@@ -4,7 +4,7 @@ const start=source.indexOf('{const r0=loadRank();'),end=source.indexOf('</script
 if(start<0||end<0)throw Error('No se encuentra el arranque del juego');
 const preview=`
 window.addEventListener('error',e=>{document.body.dataset.previewError=e.message});
-resize();buildShop();buildSkillsMenu();buildPowers();buildDragonUI();buildBar();buildRankBtn();buildTabs();setupDrawers();setupTip();
+resize();buildShop();buildSkillsMenu();buildPowers();buildDragonUI();buildAutoUpgradeHeaders();buildBar();buildRankBtn();buildTabs();setupDrawers();setupTip();
 newGame('mage');G.lvl=20;G.tower.lvl=100;G.gold=5000;G.tpending=2;buyEgg();G.bx=60;G.by=20;
 for(const s of SK)G.skills[s.id]=10;for(const sp of SPS)G.spLv[sp.id]=20;
 for(const a of CLS.mage)G.cls[a.id]=10;G.tv=(G.tv||0)+1;recalc();G.hp=S.maxHp*.7;

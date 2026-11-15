@@ -154,13 +154,24 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 #bottomp{grid-column:1;grid-row:2;display:grid;grid-template-columns:6fr 6fr 5fr 8fr 5fr;gap:12px;align-items:start;padding:8px 14px 10px;border-top:3px solid #8a6a2a;background:linear-gradient(180deg,#241d30,#120f1a);box-shadow:0 -6px 18px #000a}
 .bsec{min-width:0}
 #heroSec{--c:6}#skSec{--c:6}#powSec{--c:5}#invSec{--c:8}#drSec{--c:5}
-#bottomp .slots{grid-template-columns:repeat(var(--c),minmax(0,1fr));grid-auto-rows:54px;gap:4px}
-#bottomp .btitle{height:36px;margin:0 0 6px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:2px;overflow:hidden}
+#bottomp .slots{grid-template-columns:repeat(var(--c),minmax(0,1fr));grid-auto-rows:70px;gap:4px}
+#bottomp .btitle{height:54px;margin:0 0 6px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:2px;overflow:hidden}
 #bottomp .btitle>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #bottomp .pts{margin:0;padding:1px 7px;font-size:10px;letter-spacing:0;text-transform:none;flex-shrink:0}
 #bottomp .chk{white-space:nowrap;font-size:10px}
 #heroName{color:#ffe7a8}
 .slot.lit{border-color:#ffd24a;box-shadow:0 0 8px #ffd24a66,inset 0 0 8px #000a}
+.slot-wrap{position:relative;min-width:0;height:100%}
+.slot-wrap>.slot{width:100%;height:100%;padding-top:18px}
+.auto-upgrade{display:inline-flex;align-items:center;gap:3px;font-size:10px;line-height:15px;letter-spacing:0;text-transform:none;color:#bdb6d9;cursor:pointer;white-space:nowrap}
+.auto-upgrade input{appearance:auto;accent-color:#9be88f;width:13px;height:13px;margin:0;cursor:pointer}
+.auto-upgrade b{color:#b5f7a5;min-width:9px;font-size:10px}
+.slot-wrap>.auto-upgrade{position:absolute;top:3px;left:3px;z-index:3;gap:1px;padding:0 1px;border-radius:3px;background:#171326dc;line-height:12px}
+.slot-wrap>.auto-upgrade input{width:11px;height:11px}
+.slot-wrap>.auto-upgrade b{font-size:9px}
+.slot-wrap .has-auto .power-star{top:20px;right:2px;font-size:10px}
+.slot-wrap:has(.auto-upgrade input:checked)>.slot{border-color:#73bc81}
+#bottomp .auto-upgrade{max-width:100%}
 .power-star{position:absolute;top:1px;right:3px;z-index:1;font-size:13px;line-height:1;color:#8a8995;text-shadow:0 1px 3px #000,0 0 3px #000;pointer-events:none}
 .power-star[data-rank="1"]{color:#71df87}
 .power-star[data-rank="2"]{color:#65b7ff}
@@ -184,7 +195,7 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
 .slot .sl{font-size:10px;color:#c9c5e4;line-height:1}
 .slot .sc{font-size:11px;font-weight:700;color:#ffd24a;line-height:1}
 #drStatus{margin:0}
-.slot{height:54px}
+.slot{height:70px}
 .slot .si{font-size:20px}
 #bottomp .slot .sc,#bottomp .slot .sl{white-space:nowrap;overflow:hidden;max-width:100%}
 @media (min-width:901px) and (max-width:1200px){
@@ -202,8 +213,12 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
   #bottomp #heroSk,#bottomp #skills{grid-template-columns:repeat(6,minmax(0,1fr))}
   #bottomp #powSlots{grid-template-columns:repeat(5,minmax(0,1fr))}
   .bsec,#bottomp .bsec{flex:1 1 auto;width:100%}
-  #bottomp .slots{grid-auto-rows:70px}
-  #bottomp .btitle{height:36px;flex-direction:row;align-items:center}
+  #bottomp .slots{grid-auto-rows:86px}
+  .slot-wrap>.slot{padding-top:24px}
+  .slot-wrap>.auto-upgrade{min-height:22px;min-width:22px;padding:2px;gap:2px}
+  .slot-wrap>.auto-upgrade input{width:16px;height:16px}
+  .slot-wrap .has-auto .power-star{top:28px}
+  #bottomp .btitle{height:54px;flex-direction:row;align-items:center}
   .slot{height:70px}
   .slot .si{font-size:26px}.slot .sl{font-size:11px}.slot .sc{font-size:12px}
 }
@@ -234,7 +249,7 @@ table.rank tr.me td{background:#2a2450;color:var(--gold)}
     <div id="shop" class="slots"></div>
   </div>
   <div class="bsec" id="drSec">
-    <div class="btitle"><span id="drStatus"></span><label class="chk"><input type="checkbox" id="drAuto"> Reponer huevo</label></div>
+    <div class="btitle"><span id="drStatus"></span><label class="chk"><input type="checkbox" id="drAuto"><b id="drAutoRank"></b> Reponer huevo</label></div>
     <div id="drSk" class="slots"></div>
   </div>
 </div>
@@ -520,7 +535,7 @@ let best=0;try{best=+localStorage.getItem('mago_best')||0}catch(e){}
 function newGame(hero){
   const nick=G&&G.nick,hero0=hero||(G&&G.hero)||'mage';
   G={t:0,enemies:[],projs:[],texts:[],fx:[],dying:[],hp:100,gold:0,xp:0,lvl:1,kills:0,bonus:0,
-     skills:{},cd:{},items:{},pending:1,tpending:1,modal:null,over:false,paused:false,speed:1,
+     autoUpgrades:[],autoUpgradeTimer:0,skills:{},cd:{},items:{},pending:1,tpending:1,modal:null,over:false,paused:false,speed:1,
      spawnAcc:0,nextBoss:45,nextWave:50,allies:[],shield:0,dmgBy:{},spCd:{},spLv:{},nick:nick||'',
      dr:{lvl:1,xp:0,pts:0,sk:{},egg:null,eggCost:EGG_COST,deaths:0,auto:false},dragon:null,drfx:[]};
   for(const d of DRSK)G.dr.sk[d.id]=0;
@@ -979,7 +994,7 @@ function updateDragon(dt){
   for(const f of G.drfx)f.t-=dt;
   G.drfx=G.drfx.filter(f=>f.t>0);
   if(dr.egg){dr.egg.t-=dt;if(dr.egg.t<=0)hatch()}
-  else if(!G.dragon&&dr.auto)buyEgg();
+
   const dg=G.dragon;if(!dg)return;
   if(dg.hp<=0){
     convertSkelDragon(dg);
@@ -2196,6 +2211,7 @@ function drawEShots(){
 /* ============ ACTUALIZACIÓN ============ */
 function update(dt){
   G.t+=dt;
+  updateAutoUpgrades(dt);
   // regeneración
   G.hp=Math.min(S.maxHp,G.hp+S.regen*dt);
   // spawns
@@ -5269,7 +5285,7 @@ let selSkill=0,hovSkill=-1;
 const shopEls={},skEls=[],drEls={};
 function buildShop(){
   const box=$('#shop');box.innerHTML='';
-  const mk=(id,icon)=>{const b=document.createElement('button');b.className='slot';b.innerHTML='<span class="si">'+icon+'</span><span class="sl"></span><span class="sc"></span>';b.onclick=()=>{buy(id);tipTouch(b)};b._tip=()=>shopTip(id);box.appendChild(b);shopEls[id]=b};
+  const mk=(id,icon)=>{const e=mkSlot(box,icon,()=>{buy(id);},()=>shopTip(id),'slot:inventory:'+id);shopEls[id]=e.b};
   mk('egg','🥚');
   for(const it of ITEMS)mk(it.id,it.n.split(' ')[0]);
   mk('potion','🧪');
@@ -5346,17 +5362,115 @@ function setPowerStar(button,level,isItem=false){
   if(!star){star=document.createElement('span');star.className='power-star';star.textContent='★';star.setAttribute('role','img');button.appendChild(star)}
   const info=powerStarInfo(level,isItem);star.dataset.rank=String(info.rank);star.dataset.max=String(info.maximum);star.title=info.label;star.setAttribute('aria-label','Poder '+info.label);
 }
-function mkSlot(box,icon,click,tip){
+function mkSlot(box,icon,click,tip,autoKey){
   const b=document.createElement('button');b.className='slot';
   b.innerHTML='<span class="si">'+icon+'</span><span class="sl"></span><span class="sc"></span>';
-  b.onclick=()=>{click();tipTouch(b)};b._tip=tip;box.appendChild(b);
+  b.onclick=()=>{click();tipTouch(b)};b._tip=tip;
+  if(autoKey){const wrap=document.createElement('div');wrap.className='slot-wrap';wrap.appendChild(b);b.classList.add('has-auto');wrap.appendChild(makeAutoUpgradeControl(autoKey));box.appendChild(wrap)}else box.appendChild(b);
   return {b,lv:b.querySelector('.sl'),cs:b.querySelector('.sc')};
+}
+/* --- compras automáticas: cola global de prioridades, casillas y secciones --- */
+const AUTO_SECTIONS={hero:'heroSec',tower:'skSec',powers:'powSec',inventory:'invSec',dragon:'drSec'};
+const autoUpgradeControls=new Map();
+let AUTO_UPGRADE_BUSY=false;
+function upgradeOptions(section,consumables=false){
+  const option=(id,level,max,cost,wallet,run,available=true)=>({section,id,key:'slot:'+section+':'+id,level,max,cost,wallet,run,available});
+  if(section==='hero')return CLS[G.hero].map(a=>option(a.id,clv(a.id),CLSMAX,clsCost(a.id),'pending',mode=>heroUp(a.id,mode)));
+  if(section==='tower')return SK.map((a,i)=>option(a.id,G.skills[a.id],SKMAX,skGoldCost(G.skills[a.id]),'tpending',mode=>skillUp(i,mode)));
+  if(section==='powers')return SPS.map(a=>option(a.id,G.spLv[a.id],SPMAX,powerCost(a.id),'tpending',mode=>powerUp(a.id,mode),tLvl()>=a.unlock));
+  if(section==='dragon')return DRSK.map(a=>option(a.id,G.dr.sk[a.id],DRMAX,drCost(a.id),'dragon',mode=>dragonUp(a.id,mode)));
+  if(section==='inventory'){
+    const items=ITEMS.map(a=>option(a.id,G.items[a.id],a.max,itemCost(a.id),null,()=>{const before=G.items[a.id];buy(a.id);return G.items[a.id]>before}));
+    if(consumables){
+      items.push(option('egg',0,Infinity,itemCost('egg'),null,()=>buyEgg(),itemAvail('egg')));
+      items.push(option('potion',0,Infinity,itemCost('potion'),null,()=>{const hp=G.hp;buy('potion');return G.hp>hp},itemAvail('potion')));
+    }
+    return items;
+  }
+  return [];
+}
+function autoUpgradeCandidates(key){
+  const [kind,section,id]=key.split(':');
+  const options=upgradeOptions(section,kind==='slot');
+  if(kind==='slot')return options.filter(a=>a.id===id);
+  if(kind!=='section')return [];
+  // Una casilla elegida por separado conserva su posición explícita en la cola.
+  const explicit=new Set(G.autoUpgrades.filter(k=>k.startsWith('slot:')));
+  return options.filter(a=>!explicit.has(a.key)).sort((a,b)=>a.level-b.level);
+}
+function autoUpgradeComplete(key){
+  const [kind,section,id]=key.split(':');
+  const options=upgradeOptions(section,kind==='slot').filter(a=>kind==='section'||a.id===id);
+  return !options.length||options.every(a=>a.level>=a.max);
+}
+function pruneAutoUpgrades(){
+  if(!G)return;
+  G.autoUpgrades=(G.autoUpgrades||[]).filter((key,index,all)=>all.indexOf(key)===index&&!autoUpgradeComplete(key));
+  G.dr.auto=G.autoUpgrades.includes('slot:inventory:egg');
+}
+function setAutoUpgrade(key,checked){
+  if(!G)return;
+  if(checked){if(!G.autoUpgrades.includes(key)&&!autoUpgradeComplete(key))G.autoUpgrades.push(key)}
+  else G.autoUpgrades=G.autoUpgrades.filter(k=>k!==key);
+  pruneAutoUpgrades();refreshAutoUpgradeUi();
+}
+function makeAutoUpgradeControl(key,header=false){
+  const label=document.createElement('label');label.className='auto-upgrade';label.dataset.autoKey=key;
+  label.title=header?'Mejorar automáticamente: primero el menor nivel que se pueda pagar. El número indica la prioridad global.':'Mejorar automáticamente con puntos de experiencia y después oro. El número indica la prioridad global.';
+  const input=document.createElement('input');input.type='checkbox';input.setAttribute('aria-label',header?'Mejorar sección automáticamente':'Mejorar casilla automáticamente');
+  const rank=document.createElement('b');
+  label.appendChild(input);label.appendChild(rank);
+  if(header){const text=document.createElement('span');text.textContent='Mejorar auto';label.appendChild(text)}
+  label.onclick=event=>event.stopPropagation();
+  input.onchange=()=>setAutoUpgrade(key,input.checked);
+  autoUpgradeControls.set(key,{label,input,rank});return label;
+}
+function buildAutoUpgradeHeaders(){
+  for(const [section,id] of Object.entries(AUTO_SECTIONS)){
+    const title=$('#'+id+' .btitle');
+    if(title&&!title.querySelector('.auto-upgrade'))title.appendChild(makeAutoUpgradeControl('section:'+section,true));
+  }
+}
+function refreshAutoUpgradeUi(){
+  if(!G)return;
+  for(const [key,control] of autoUpgradeControls){
+    const priority=G.autoUpgrades.indexOf(key)+1;
+    control.input.checked=priority>0;control.input.disabled=autoUpgradeComplete(key);
+    control.rank.textContent=priority?String(priority):'';
+    control.label.dataset.priority=priority?String(priority):'';
+  }
+  const egg=$('#drAuto'),rank=$('#drAutoRank'),priority=G.autoUpgrades.indexOf('slot:inventory:egg')+1;
+  if(egg)egg.checked=priority>0;if(rank)rank.textContent=priority?String(priority):'';
+}
+function autoUpgradeWallet(option){return option.wallet==='dragon'?G.dr.pts:option.wallet?G[option.wallet]:0}
+function runAutoUpgrades(budget=16){
+  if(!G||G.over||G.modal||G.paused||!G.autoUpgrades.length)return 0;
+  let purchases=0;AUTO_UPGRADE_BUSY=true;
+  try{
+    pruneAutoUpgrades();
+    while(purchases<budget){
+      let bought=false;
+      for(const key of G.autoUpgrades){
+        const candidate=autoUpgradeCandidates(key).find(a=>a.level<a.max&&a.available&&(autoUpgradeWallet(a)>0||G.gold>=a.cost));
+        if(!candidate)continue;
+        const mode=autoUpgradeWallet(candidate)>0?'pt':'gold';
+        if(candidate.run(mode)){purchases++;bought=true;pruneAutoUpgrades();break}
+      }
+      if(!bought)break;
+    }
+  }finally{AUTO_UPGRADE_BUSY=false}
+  if(purchases)refreshAll();else refreshAutoUpgradeUi();
+  return purchases;
+}
+function updateAutoUpgrades(dt){
+  G.autoUpgradeTimer-=dt;if(G.autoUpgradeTimer>0)return;
+  G.autoUpgradeTimer=.2;runAutoUpgrades();
 }
 /* --- habilidades generales (panel inferior) --- */
 function buildSkillsMenu(){
   const box=$('#skills');box.innerHTML='';
   skEls.length=0;
-  SK.forEach((s,i)=>{const e=mkSlot(box,SKI[s.id]||TYPES[s.type].i,()=>skillBuy(i),()=>skTip(i));e.b._rid=s.id;skEls.push(e)});
+  SK.forEach((s,i)=>{const e=mkSlot(box,SKI[s.id]||TYPES[s.type].i,()=>skillBuy(i),()=>skTip(i),'slot:tower:'+s.id);e.b._rid=s.id;skEls.push(e)});
 }
 function skTip(i){
   const s=SK[i],l=G.skills[s.id],t=TYPES[s.type],u=ULT[s.id],L=Math.max(1,l);
@@ -5509,8 +5623,8 @@ function refreshInv(){return;
 const drRows={};
 function buildDragonUI(){
   const box=$('#drSk');box.innerHTML='';
-  for(const d of DRSK)drRows[d.id]=mkSlot(box,d.icon,()=>{if(G.dr.pts>0)dragonUp(d.id,'pt');else dragonUp(d.id,'gold');refreshAll()},()=>drTip(d));
-  $('#drAuto').onchange=e=>{G.dr.auto=e.target.checked};
+  for(const d of DRSK)drRows[d.id]=mkSlot(box,d.icon,()=>{if(G.dr.pts>0)dragonUp(d.id,'pt');else dragonUp(d.id,'gold');refreshAll()},()=>drTip(d),'slot:dragon:'+d.id);
+  $('#drAuto').onchange=e=>setAutoUpgrade('slot:inventory:egg',e.target.checked);
 }
 function drTip(d){
   const l=G.dr.sk[d.id],max=l>=DRMAX;
@@ -5542,7 +5656,7 @@ function buildHeroMenu(){
   const hd=HEROES[G.hero];
   $('#heroName').textContent=hd.icon+' '+hd.n;
   if(G.hero==='bard'){const b=document.createElement('button');b.id='bardMelody';b.className='ctl';b.style.cssText='display:block;width:auto;max-width:100%;height:26px;min-height:26px;font-size:11px;padding:3px 8px;margin:0 0 5px';b.title='Alterna las melodías aprendidas. Durante Gran concierto la secuencia es automática.';b.onclick=bardSwitch;box.before(b)}
-  CLS[G.hero].forEach(a=>{heroEls[a.id]=mkSlot(box,a.icon,()=>heroBuy(a.id),()=>heroTip(a));heroEls[a.id].b._rid=a.id});
+  CLS[G.hero].forEach(a=>{heroEls[a.id]=mkSlot(box,a.icon,()=>heroBuy(a.id),()=>heroTip(a),'slot:hero:'+a.id);heroEls[a.id].b._rid=a.id});
 }
 function heroTip(a){return heroTip0(a)+tierHtml(a.id)}
 function heroTip0(a){
@@ -5572,7 +5686,7 @@ function buildTabs(){
   });
 }
 function toggleDrWin(v){const w=$('#drWin');w.classList.toggle('open',v===undefined?!w.classList.contains('open'):v)}
-function refreshAll(){refreshShop();refreshSkills();refreshHero();refreshPowers();refreshDragonUI();refreshBadges();refreshTip()}
+function refreshAll(){if(AUTO_UPGRADE_BUSY)return;pruneAutoUpgrades();refreshShop();refreshSkills();refreshHero();refreshPowers();refreshDragonUI();refreshBadges();refreshTip();refreshAutoUpgradeUi()}
 
 const barEls={};
 function buildBar(){
@@ -6646,7 +6760,7 @@ const powSlotEls={};
 function buildPowSlots(){
   const box=$('#powSlots');if(!box)return;box.innerHTML='';
   for(const sp of SPS){
-    const e=mkSlot(box,sp.icon,()=>powerUp(sp.id,G.tpending>0?'pt':'gold'),()=>powTip(sp));
+    const e=mkSlot(box,sp.icon,()=>powerUp(sp.id,G.tpending>0?'pt':'gold'),()=>powTip(sp),'slot:powers:'+sp.id);
     powSlotEls[sp.id]=e;
   }
 }
@@ -6682,7 +6796,7 @@ function refreshTowerUi(){
   const _d3t=drawFx3;
   drawFx3=function(x0,y0){const states=syncTowers();for(let i=0;i<states.length;i++)drawTower(i);_d3t(x0,y0)};
   const _ra=refreshAll;
-  refreshAll=function(){_ra();refreshTowerUi()};
+  refreshAll=function(){if(AUTO_UPGRADE_BUSY)return;_ra();refreshTowerUi()};
   buildPowSlots();
 })();
 
@@ -6700,7 +6814,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 {const r0=loadRank();best=r0.length?r0[0].t:0}
-resize();buildShop();buildSkillsMenu();buildPowers();buildDragonUI();buildBar();buildRankBtn();buildTabs();setupDrawers();setupTip();
+resize();buildShop();buildSkillsMenu();buildPowers();buildDragonUI();buildAutoUpgradeHeaders();buildBar();buildRankBtn();buildTabs();setupDrawers();setupTip();
 {let z=NaN;try{z=parseFloat(localStorage.getItem('mago_zoom'))}catch(e){}if(z)Z=Math.max(.5,Math.min(1.8,z));else if(typeof innerWidth!=='undefined'&&innerWidth<700)Z=.7}
 newGame();showStart();
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>resize()).observe($('#game'));
