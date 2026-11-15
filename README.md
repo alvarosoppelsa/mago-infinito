@@ -1,6 +1,6 @@
 # Mago Infinito
 
-Juego de supervivencia infinito en el navegador. Elige uno de los 9 héroes (mago, arquero elfo, nigromante, enano artillero, bárbaro, cazador demonio, sacerdote, monje o paladín), equilibrados para sobrevivir lo mismo, combina habilidades, poderes, objetos y un dragón, y sobrevive el mayor tiempo posible.
+Juego de supervivencia infinito en el navegador. Elige uno de los 13 héroes (mago, arquero elfo, nigromante, enano artillero, bárbaro, cazador demonio, sacerdote, monje, paladín, cazador troll, hombre lobo, tauren druida o Devorador abisal), combina habilidades, objetos y un dragón, y sobrevive el mayor tiempo posible.
 
 - 30 tipos de enemigos, cada uno con su armadura y resistencias por tipo de daño. Algunos corren más, resucitan, se dividen, se curan (o curan a otros), se vuelven invulnerables por momentos o llegan en enjambres y oleadas numerosas. Pasa el ratón por encima de un enemigo para ver sus rasgos.
 - Toda la interfaz está en el panel inferior: habilidades del héroe, habilidades generales, inventario (10 objetos, entre ellos el *Tomo del dragón* y el *Colmillo vampírico*) y el dragón. Pasa el ratón (o mantén pulsado en móvil) sobre cualquier casilla para ver su descripción.
@@ -14,3 +14,16 @@ Juego de supervivencia infinito en el navegador. Elige uno de los 9 héroes (mag
 - El ranking se guarda localmente en tu navegador.
 
 Estado: beta.
+
+Todas las habilidades de héroe y generales tienen mejoras acumulativas en los niveles 5, 10, 15 y 20. Las generales conservan además sus ultimates existentes. Las fichas muestran las mejoras desbloqueadas y pendientes.
+
+- [Detalle de habilidades y escalados](ANALISIS-HABILIDADES.md).
+- [Análisis del plantel y propuesta de cuatro nuevos héroes](PROPUESTA-HEROES.md).
+- Comprobar la progresión: `node comprobar-progresion.cjs`.
+- Regenerar el informe desde el código: `node generar-analisis.cjs`.
+
+El **Devorador abisal** consume restos cercanos para acumular hasta 60 de biomasa. Tiene diez habilidades con mejoras en 5/10/15/20 y una transformación temporal que puede prolongar al comer, con duración limitada. Su dibujo sigue el sistema articulado del resto de héroes y muestra placas y púas nuevas al mutar.
+
+- [Dirección visual de los cuatro héroes elegidos](DISENO-NUEVOS-HEROES.md).
+- Comprobar las mecánicas del Devorador: `node comprobar-devorador.cjs`.
+- Generar galería visual y partida de prueba: `node previsualizar-devorador.cjs`.
