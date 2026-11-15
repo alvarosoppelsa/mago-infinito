@@ -10,7 +10,7 @@ Análisis de la versión local de index.html. Contiene 16 héroes, 192 habilidad
 - Habilidad particular: redondear(90 × 1,30^L) de oro. General: redondear(80 × 1,28^L). L es el nivel actual, antes de comprar; aprender cuesta 90/80.
 - Las mejoras particulares de niveles 5, 10, 15 y 20 se acumulan. Los multiplicadores de daño, radio, duración, curación y enfriamiento se multiplican; las cantidades adicionales se suman. Por ejemplo, +50% y luego +40% de daño resulta en ×2,10.
 - Si todas las habilidades del héroe llegan a 20, sus siguientes subidas dan +10% de daño. La torre solo da esta bonificación cuando sus habilidades y sus diez poderes están al máximo.
-- La torre empieza en nivel 1 con un punto propio. Necesita redondear(15 × 1,33^(nivel − 1)) de experiencia por nivel, hasta 30. Recibe el 15% base de cada baja más el 85% multiplicado por su fracción del daño efectivo; se incluye el golpe mortal y se excluye el exceso de daño. Cada subida da un punto exclusivo para habilidades o poderes de torre.
+- La torre empieza en nivel 1 con un punto propio. No tiene nivel máximo. Hasta el nivel 30 necesita redondear(15 × 1,33^(nivel − 1)) de experiencia; después el coste crece linealmente un 6% del coste del nivel 30 por nivel. Cada 50 niveles aparece otra torre con su propio ataque básico; todas comparten experiencia, nivel y mejoras. Recibe el 15% base de cada baja más el 85% multiplicado por su fracción del daño efectivo; se incluye el golpe mortal y se excluye el exceso de daño. Cada subida da un punto exclusivo para habilidades o poderes de torre.
 - La vida base real es la ficha del héroe +25, y gana +8 por nivel del héroe, antes de objetos y pasivas.
 
 ## Cómo leer las cifras
@@ -3672,7 +3672,7 @@ Los venenos acumulables refrescan su duración: la primera aplicación aporta su
 - La descripción de Cadena de rayos dice «+1 salto por nivel», pero después de Nv5 el código añade uno cada 3 niveles.
 - La ficha de Flechas múltiples limita la cantidad base a 4; el cálculo real del disparo incluye las mejoras especiales y permite hasta 7. Las tablas de ficha no deben interpretarse como el total final de proyectiles.
 - Cristal de alcance añade 5% por nivel a habilidades que usan el multiplicador de alcance. El pulso normal usa (110+3L) por su mejora especial de radio, sin el multiplicador del Cristal.
-- Los diez poderes de teclado pertenecen a la torre y se desbloquean en sus niveles 3, 6…30.
+- Los diez poderes automáticos pertenecen a la torre y se desbloquean en sus niveles 3, 6…30.
 - Este informe cubre las habilidades particulares de los héroes y las generales. El dragón y el inventario tienen sus propios sistemas independientes.
 
 ## Progresión especial completada
@@ -3683,11 +3683,11 @@ Los nuevos multiplicadores de radio afectan al alcance de las generales que lo u
 
 ## Poderes de la Torre del mago
 
-Se desbloquean en niveles 3, 6…30 de la torre. Cada uno empieza en nivel 1 y se mejora hasta 20 con puntos de torre u oro. Las mejoras de nivel 5, 10, 15 y 20 son acumulativas. El daño escala con el nivel de la torre y los objetos. Modo manual inicial; Mayús + tecla alterna el modo automático.
+Se desbloquean en niveles 3, 6…30 de la torre. Cada uno empieza en nivel 1 y se mejora hasta 20 con puntos de torre u oro. Las mejoras de nivel 5, 10, 15 y 20 son acumulativas. El daño escala con el nivel de la torre y los objetos. Se lanzan automáticamente cuando están listos y hay objetivos adecuados. Los iconos inferiores sirven para mejorar sus niveles.
 
 ### 💥 Explosión
 
-Torre Nv 3 · tecla Q · recarga base 14 s. Explota alrededor de la torre: daño de quemadura, empuja y quema.
+Torre Nv 3 · recarga base 14 s. Explota alrededor de la torre: daño de quemadura, empuja y quema.
 
 - **Nv 5 — Llama intensa:** +30% de daño.
 - **Nv 10 — Onda expansiva:** +25% de radio.
@@ -3696,7 +3696,7 @@ Torre Nv 3 · tecla Q · recarga base 14 s. Explota alrededor de la torre: daño
 
 ### ⛈️ Tormenta de rayos
 
-Torre Nv 6 · tecla W · recarga base 18 s. Fulmina a varios enemigos con rayos.
+Torre Nv 6 · recarga base 18 s. Fulmina a varios enemigos con rayos.
 
 - **Nv 5 — Dos relámpagos:** +2 objetivos.
 - **Nv 10 — Truenos intensos:** +35% de daño.
@@ -3705,7 +3705,7 @@ Torre Nv 6 · tecla W · recarga base 18 s. Fulmina a varios enemigos con rayos.
 
 ### 💀 Soldados esqueleto
 
-Torre Nv 9 · tecla E · recarga base 25 s. Invoca esqueletos que luchan por ti durante 20 s.
+Torre Nv 9 · recarga base 25 s. Invoca esqueletos que luchan por ti durante 20 s.
 
 - **Nv 5 — Refuerzos:** +2 soldados.
 - **Nv 10 — Huesos rúnicos:** +50% de vida y +30% de daño.
@@ -3714,7 +3714,7 @@ Torre Nv 9 · tecla E · recarga base 25 s. Invoca esqueletos que luchan por ti 
 
 ### 🧊 Ventisca
 
-Torre Nv 12 · tecla R · recarga base 30 s. Hiela y ralentiza a todos los enemigos en alcance.
+Torre Nv 12 · recarga base 30 s. Hiela y ralentiza a todos los enemigos en alcance.
 
 - **Nv 5 — Frío intenso:** +40% de daño.
 - **Nv 10 — Invierno largo:** +50% de duración de la ralentización.
@@ -3723,7 +3723,7 @@ Torre Nv 12 · tecla R · recarga base 30 s. Hiela y ralentiza a todos los enemi
 
 ### ☄️ Lluvia de meteoros
 
-Torre Nv 15 · tecla Z · recarga base 22 s. Marca varios puntos y, tras un instante, caen meteoros con daño de quemadura en área.
+Torre Nv 15 · recarga base 22 s. Marca varios puntos y, tras un instante, caen meteoros con daño de quemadura en área.
 
 - **Nv 5 — Doble impacto:** +2 meteoros.
 - **Nv 10 — Cráteres amplios:** +30% de alcance y radio de impacto.
@@ -3732,7 +3732,7 @@ Torre Nv 15 · tecla Z · recarga base 22 s. Marca varios puntos y, tras un inst
 
 ### ☠️ Nube tóxica
 
-Torre Nv 18 · tecla X · recarga base 24 s. Zona de veneno sobre el mayor grupo de enemigos durante varios segundos.
+Torre Nv 18 · recarga base 24 s. Zona de veneno sobre el mayor grupo de enemigos durante varios segundos.
 
 - **Nv 5 — Miasma extenso:** +30% de alcance y radio.
 - **Nv 10 — Veneno denso:** +40% de daño.
@@ -3741,7 +3741,7 @@ Torre Nv 18 · tecla X · recarga base 24 s. Zona de veneno sobre el mayor grupo
 
 ### 🌟 Juicio divino
 
-Torre Nv 21 · tecla C · recarga base 28 s. Daño divino a todos los enemigos en alcance y cura al héroe.
+Torre Nv 21 · recarga base 28 s. Daño divino a todos los enemigos en alcance y cura al héroe.
 
 - **Nv 5 — Luz intensa:** +35% de daño.
 - **Nv 10 — Gracia divina:** +50% de curación.
@@ -3750,7 +3750,7 @@ Torre Nv 21 · tecla C · recarga base 28 s. Daño divino a todos los enemigos e
 
 ### 🕳️ Agujero negro
 
-Torre Nv 24 · tecla V · recarga base 32 s. Atrae a los enemigos hacia un punto y los daña con oscuridad.
+Torre Nv 24 · recarga base 32 s. Atrae a los enemigos hacia un punto y los daña con oscuridad.
 
 - **Nv 5 — Horizonte amplio:** +30% de alcance y radio.
 - **Nv 10 — Singularidad densa:** +40% de daño.
@@ -3759,7 +3759,7 @@ Torre Nv 24 · tecla V · recarga base 32 s. Atrae a los enemigos hacia un punto
 
 ### ⏳ Distorsión temporal
 
-Torre Nv 27 · tecla B · recarga base 40 s. Ralentiza a los enemigos y acelera tus ataques un 50% unos segundos.
+Torre Nv 27 · recarga base 40 s. Ralentiza a los enemigos y acelera tus ataques un 50% unos segundos.
 
 - **Nv 5 — Tiempo dilatado:** +30% de duración de la prisa y ralentización.
 - **Nv 10 — Campo temporal:** +30% de alcance.
@@ -3768,7 +3768,7 @@ Torre Nv 27 · tecla B · recarga base 40 s. Ralentiza a los enemigos y acelera 
 
 ### 🔰 Barrera rúnica
 
-Torre Nv 30 · tecla N · recarga base 36 s. Protege al héroe con un escudo y libera desde la torre una onda arcana que daña y ralentiza.
+Torre Nv 30 · recarga base 36 s. Protege al héroe con un escudo y libera desde la torre una onda arcana que daña y ralentiza.
 
 - **Nv 5 — Runas reforzadas:** +40% de escudo.
 - **Nv 10 — Onda protectora:** +30% de radio y +35% de daño.

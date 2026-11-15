@@ -36,15 +36,26 @@ setup('monk');G.bx=210;G.by=45;const heroX=cx(),heroY=cy();towerBegin();towerBeg
 assert.equal(cx(),heroX);assert.equal(cy(),heroY);assert.equal(ax(),towX());towerEnd();assert.equal(ax(),towX());towerEnd();assert.equal(G.org,null);
 e=foe(1000);towerBegin();SRC='Misil arcano';castSkill(SK[0],1);towerEnd();assert.ok(Math.abs(G.projs[0].x-towX())<=5);assert.equal(G.projs[0].y,towY()-10);
 G.projs=[];towerBegin();towerBasic(1);towerEnd();assert.equal(G.projs[0].x,towX());assert.equal(G.projs[0].y,towerTopY());
-// Desbloqueos por nivel de torre, límite 30, puntos y modo manual/automático.
+// Desbloqueos por nivel compartido y poderes automáticos.
 setup();G.lvl=100;recalc();useSpecial('nova');assert.equal(G.spCd.nova,0);
 for(const sp of SPS){
- assert.equal(G.auto[sp.id],false);G.tower.lvl=sp.unlock-1;useSpecial(sp.id);assert.equal(G.spCd[sp.id],0);
+ G.tower.lvl=sp.unlock-1;useSpecial(sp.id);assert.equal(G.spCd[sp.id],0);
  towerGainXp(tNeed(G.tower.lvl));assert.equal(tLvl(),sp.unlock);useSpecial(sp.id);assert.ok(G.spCd[sp.id]>0,sp.id);
- toggleAuto(sp.id);assert.equal(G.auto[sp.id],true);assert.equal(G.org,null);
+ assert.equal(G.org,null);
 }
-setup();towerGainXp(1e9);assert.equal(tLvl(),30);assert.equal(G.tower.xp,0);assert.equal(G.tpending,30);
-towerGainXp(1e9);assert.equal(G.tpending,30);
+// La progresión continúa después de 30 y crea torres reales en 50, 100, 150...
+setup();for(let level=1;level<31;level++)towerGainXp(tNeed(tLvl()));
+assert.equal(tLvl(),31);assert.equal(G.tpending,31);assert.equal(towerCount(),1);
+for(const threshold of [50,100,150]){
+ G.tower.lvl=threshold-1;G.tower.xp=0;assert.equal(towerCount(),threshold/50);
+ towerGainXp(tNeed(tLvl())+7);assert.equal(tLvl(),threshold);assert.equal(towerCount(),1+threshold/50);assert.equal(G.tower.xp,7);
+ assert.equal(syncTowers().length,towerCount());
+}
+assert.ok(Number.isFinite(tNeed(10000)));assert.ok(tNeed(10001)>tNeed(10000));
+const positions=Array.from({length:50},(_,i)=>towerPosition(i));assert.equal(new Set(positions.map(p=>p.x.toFixed(4)+','+p.y.toFixed(4))).size,50);
+G.enemies=[];G.projs=[];for(let i=0;i<towerCount();i++)foe(1e8,towX(i)+20,towY(i));
+for(const unit of syncTowers())unit.cd=0;towerBasic(.1);assert.equal(G.projs.length,towerCount());
+for(let i=0;i<towerCount();i++){assert.equal(G.projs[i].x,towX(i));assert.equal(G.projs[i].y,towerTopY(i))}draw();
 setup();for(const s of SK)G.skills[s.id]=SKMAX;towerGainXp(tNeed(1));assert.equal(G.tpending,2);assert.equal(G.bonus,0);
 // Meteoros, zonas e invocaciones conservan su atribución y los objetos amplían su duración.
 for(const id of ['meteor','cloud','hole','skel']){
@@ -54,8 +65,8 @@ for(const id of ['meteor','cloud','hole','skel']){
  if(id==='cloud'||id==='hole'){assert.ok(G.zones[0].t>(id==='cloud'?8:4));updateZones(.5);assert.ok(e.tdmg>0)}
  if(id==='skel'){assert.equal(G.allies[0].tower,true);assert.ok(G.allies[0].life>20);G.allies[0].x=e.x;G.allies[0].y=e.y;updateAllies(.1);assert.ok(e.tdmg>0)}
 }
-// El modo automático se activa expresamente y dispara desde la torre.
-setup();G.tower.lvl=3;for(let i=0;i<3;i++)foe(10000);toggleAuto('nova');towerBegin();updateSpecials(.1);towerEnd();assert.ok(G.spCd.nova>0);assert.ok(G.enemies.every(e=>e.tdmg>0));
+// Los poderes se lanzan automáticamente sin controles de lanzamiento.
+setup();G.tower.lvl=3;for(let i=0;i<3;i++)foe(10000);towerBegin();updateSpecials(.1);towerEnd();assert.ok(G.spCd.nova>0);assert.ok(G.enemies.every(e=>e.tdmg>0));
 // Compras y mejoras de los diez poderes: umbrales, caché, límite y efectos reales.
 assert.equal(SPS.length,10);assert.equal(new Set(SPS.map(sp=>sp.key)).size,10);
 for(const sp of SPS){
@@ -96,7 +107,7 @@ if(process.argv.includes('--simular'))vm.runInContext(`
 const normalHurt=hurt;hurt=()=>{};
 for(const hero of Object.keys(HEROES)){
  let seed=7183;Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
- setup(hero);for(const sp of SPS)G.auto[sp.id]=true;
+ setup(hero);
  const unlocked={};let nextShop=0;
  for(let step=0;step<14400;step++){
   if(G.t>=nextShop){

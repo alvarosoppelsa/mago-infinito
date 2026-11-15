@@ -16,7 +16,7 @@ async function main(){
   ws.onmessage=event=>{const m=JSON.parse(event.data);if(m.id&&pending.has(m.id)){const {resolve,reject}=pending.get(m.id);pending.delete(m.id);m.error?reject(Error(m.error.message)):resolve(m.result)}};
   const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}))});
   const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.text);return r.result.value};
-  for(const viewport of [{width:1500,height:1000,mobile:false,file:'preview-torre.png'},{width:390,height:844,mobile:true,file:'preview-torre-movil.png'}]){
+  for(const viewport of [{width:1500,height:1000,mobile:false,file:'preview-torre.png'},{width:1100,height:850,mobile:false,file:'preview-torre-compacta.png'},{width:390,height:844,mobile:true,file:'preview-torre-movil.png'}]){
    await send('Emulation.setDeviceMetricsOverride',{width:viewport.width,height:viewport.height,deviceScaleFactor:1,mobile:viewport.mobile});
    await send('Page.navigate',{url:'file:///'+path.resolve('preview-torre.html').replaceAll('\\','/')});
    let state;
@@ -24,13 +24,15 @@ async function main(){
    assert.equal(state.ready,'ok');assert.equal(state.forest,'loaded');
    const metrics=await evaluate(`({width:innerWidth,panel:document.querySelector('#bottomp').clientWidth,scroll:document.querySelector('#bottomp').scrollWidth,powers:document.querySelectorAll('#powSlots .slot').length})`);
    assert.equal(metrics.width,viewport.width);assert.ok(metrics.scroll<=metrics.panel+1);assert.equal(metrics.powers,10);
-   // Comprueba el botón del décimo poder y su cambio a AUTO mediante teclado.
-   await send('Input.dispatchKeyEvent',{type:'keyDown',key:'N',code:'KeyN',modifiers:8});
-   await send('Input.dispatchKeyEvent',{type:'keyUp',key:'N',code:'KeyN',modifiers:8});
-   assert.equal(await evaluate('G.auto.barrier'),true);
-   await evaluate('refreshBar()');
+   assert.equal(await evaluate("document.querySelectorAll('#bar .cast,#bar .mode').length"),0);
+   assert.equal(await evaluate("document.querySelectorAll('#towerXp').length"),0);
+   assert.equal(await evaluate('towerCount()'),3);
+   if(!viewport.mobile){
+    const rows=await evaluate("Array.from(document.querySelectorAll('#heroSk,#skills,#powSlots,#shop,#drSk')).map(e=>e.getBoundingClientRect().top)");
+    assert.ok(Math.max(...rows)-Math.min(...rows)<1,'Las filas inferiores no están alineadas: '+rows);
+   }
    const shot=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(viewport.file,Buffer.from(shot.data,'base64'));
-   console.log(JSON.stringify({viewport:viewport.width+'x'+viewport.height,...metrics,forest:state.forest,shiftN:'ok'}));
+   console.log(JSON.stringify({viewport:viewport.width+'x'+viewport.height,...metrics,forest:state.forest,automaticPowers:true,towers:3,alignment:'ok'}));
   }
   await send('Browser.close').catch(()=>{});
  }finally{if(ws)ws.close();browser.kill()}
